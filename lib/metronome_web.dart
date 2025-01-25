@@ -46,6 +46,8 @@ class MetronomeWeb extends MetronomePlatform {
     int volume = 50,
     bool enableSession = true,
     bool enableTickCallback = false,
+     String? accentedPath,
+    int timeSignature = 4,
   }) async {
     if (volume > 100 || volume < 0) {
       throw Exception('Volume must be between 0 and 100');

@@ -20,9 +20,11 @@ class Metronome {
     int volume = 50,
     bool enableSession = true,
     bool enableTickCallback = false,
+    int timeSignature = 4,
   }) async {
     if (!PlatformUtils.isWeb) {
       mainPath = await saveAudioAssetsToLocal(mainPath);
+      accentedPath = await saveAudioAssetsToLocal(accentedPath!);
     }
     MetronomePlatform.instance.init(
       mainPath,
@@ -30,6 +32,8 @@ class Metronome {
       volume: volume,
       enableSession: enableSession,
       enableTickCallback: enableTickCallback,
+      accentedPath: accentedPath,
+      timeSignature: timeSignature
     );
   }
 

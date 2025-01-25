@@ -104,13 +104,15 @@ public class MetronomePlugin implements FlutterPlugin, MethodCallHandler {
   private void metronomeInit(@NonNull MethodCall call) {
     if (!Objects.equals(call.argument("path"), "")) {
       String _mainFilePath = call.argument("path");
+      String _accentedFilePath = call.argument("accentedPath");
       boolean enableTickCallback = call.argument("enableTickCallback");
-      metronome = new Metronome(context, _mainFilePath);
+      metronome = new Metronome(context, _mainFilePath, _accentedFilePath);
       if (enableTickCallback && eventTickSink!=null){
         metronome.enableTickCallback(eventTickSink);
       }
       setVolume(call);
       setBPM(call);
+      setTimeSignature(call);
     }
   }
 
@@ -136,6 +138,15 @@ public class MetronomePlugin implements FlutterPlugin, MethodCallHandler {
   private void setAudioFile(@NonNull MethodCall call) {
     if (metronome != null) {
       metronome.setAudioFile(call.argument("path"));
+    }
+  }
+
+  private void setTimeSignature(@NonNull MethodCall call) {
+    if (metronome != null) {
+      Integer _timeSignature = call.argument("timeSignature");
+      if (_timeSignature != null) {
+        metronome.setTimeSignature(_timeSignature);
+      }
     }
   }
 }

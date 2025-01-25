@@ -17,6 +17,8 @@ class MethodChannelMetronome extends MetronomePlatform {
     int volume = 50,
     bool enableSession = true,
     bool enableTickCallback = false,
+    String? accentedPath,
+    int timeSignature = 4,
   }) async {
     if (mainPath == '') {
       throw Exception('Main path cannot be empty');
@@ -34,6 +36,8 @@ class MethodChannelMetronome extends MetronomePlatform {
         'volume': volume / 100.0,
         'enableSession': enableSession,
         'enableTickCallback': enableTickCallback,
+        'accentedPath': accentedPath,
+        'timeSignature': timeSignature,
       });
     } catch (e) {
       if (kDebugMode) {
