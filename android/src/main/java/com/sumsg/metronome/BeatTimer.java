@@ -4,7 +4,7 @@ import android.os.Handler;
 import android.os.Looper;
 import io.flutter.plugin.common.EventChannel;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicBoolean;
+
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -19,7 +19,6 @@ public class BeatTimer {
     private Runnable beatRunnable;
     private int timeSignature;
     private AtomicInteger currentTickAtomic = new AtomicInteger(1);
-    private AtomicBoolean tickActive = new AtomicBoolean(false);
     private final Lock lock;
     private Condition tickEvent;
 
@@ -35,7 +34,6 @@ public class BeatTimer {
         stopBeatTimer();
         handler = new Handler(Looper.getMainLooper());
         
-        tickActive.set(true);
         if ((handler!=null)&&(eventTickSink!=null)){
 
             beatRunnable = new Runnable() {
@@ -60,14 +58,10 @@ public class BeatTimer {
 
     public void waitForTick() throws InterruptedException {
         lock.lock();
-        try {
-           
+        try {       
             if(!tickEvent.await(1000, TimeUnit.MILLISECONDS)){
-                //Log.e(TAG, "Timeout");
                 System.out.println("Timeout reached without signal.");
-            }  // Waiting for the signal
-            
-            
+            }  // Waiting for the signal            
         } finally {
             lock.unlock();
         }
@@ -79,7 +73,7 @@ public class BeatTimer {
             handler = null;
             beatRunnable = null;
         }
-        tickActive.set(false);
+
     }
 
     public void synchronizeTicks(int currentTick){
