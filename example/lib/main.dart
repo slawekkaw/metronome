@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+//import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:metronome/metronome.dart';
 
@@ -21,6 +21,7 @@ class _MyAppState extends State<MyApp> {
   String metronomeIcon = 'assets/metronome-left.png';
   String metronomeIconRight = 'assets/metronome-right.png';
   String metronomeIconLeft = 'assets/metronome-left.png';
+  int currentTick = 1;
   final List wavs = [
     'base',
     'claves',
@@ -34,15 +35,20 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _metronomePlugin.init(
       'assets/audio/snare44_wav.wav',
+      accentedPath: 'assets/audio/claves44_wav.wav',
       bpm: bpm,
       volume: vol,
       enableSession: true,
       enableTickCallback: true,
+      timeSignature: 4,
+
     );
-    _metronomePlugin.onListenTick((_) {
-      if (kDebugMode) {
-        print('tick');
-      }
+    _metronomePlugin.onListenTick((currentTickIntern) {
+      //if (kDebugMode) {
+        //print(onEvent.toString());
+        //print('tick');
+      currentTick = currentTickIntern;
+      //}
       setState(() {
         if (metronomeIcon == metronomeIconRight) {
           metronomeIcon = metronomeIconLeft;
@@ -130,6 +136,25 @@ class _MyAppState extends State<MyApp> {
               ),
             ],
           ),
+        ),
+        bottomNavigationBar: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: List.generate(4, (index) {
+            return Row(
+              children: [
+          Radio<int>(
+            value: index + 1,
+            groupValue: currentTick,
+            onChanged: (int? value) {
+              //setState(() {
+              //  currentTick = value!;
+              //});
+            },
+          ),
+          Text('${index + 1}'),
+              ],
+            );
+          }),
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () async {
