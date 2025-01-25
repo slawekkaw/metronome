@@ -6,6 +6,11 @@ import android.util.Log;
 
 import io.flutter.plugin.common.EventChannel;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.TimeUnit;
+
 public class Metronome {
     private final Object mLock = new Object();
     private int mBpm = 120;
@@ -22,6 +27,8 @@ public class Metronome {
     private BeatTimer beatTimer;
     private int timeSignature = 4;
     private int currentBeat=1;
+    private final Lock lock = new ReentrantLock();
+    private final Condition tickEvent = lock.newCondition();
 
     public Metronome(Context ctx, String mainFile, String accentedFile) {
         context = ctx;
@@ -57,7 +64,7 @@ public class Metronome {
     }
 
     public void enableTickCallback(EventChannel.EventSink _eventTickSink) {
-        beatTimer = new BeatTimer(_eventTickSink, timeSignature);
+        beatTimer = new BeatTimer(_eventTickSink, timeSignature, lock, tickEvent);
     }
 
     public void calcSilence() {
@@ -98,6 +105,10 @@ public class Metronome {
                     short[] sample = (short[]) mTook.getSample();
                     audioGenerator.writeSound(sample, Math.min(sample.length, mBeatDivisionSampleCount));
                     audioGenerator.writeSound(mTookSilenceSoundArray);
+                }             
+
+                if (beatTimer != null) {
+                    beatTimer.synchronizeTicks(currentBeat );
                 }
 
                 if(currentBeat==timeSignature){
@@ -105,15 +116,7 @@ public class Metronome {
                 }else{
                     currentBeat++;
                 }
-
-                if (beatTimer != null) {
-                    beatTimer.synchronizeTicks(currentBeat );
-                }
-
-                //if (beatTimer != null) {
-                //    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> beatTimer.sendEvent(currentBeat));
-                //}
-
+                pulseEventTick();
                 synchronized (mLock) {
                     if (!play)
                         return;
@@ -125,6 +128,17 @@ public class Metronome {
             beatTimer.startBeatTimer(bpm);
         }
     }
+
+    public void pulseEventTick() {
+        lock.lock();
+        try {
+            tickEvent.signal();  
+        } finally {
+            lock.unlock();
+        }
+    }
+
+
 
     public void pause() {
         if (audioGenerator.getAudioTrack() != null) {

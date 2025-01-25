@@ -4,6 +4,13 @@ import android.os.Handler;
 import android.os.Looper;
 import io.flutter.plugin.common.EventChannel;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.TimeUnit;
+
 
 public class BeatTimer {
     // private final String TAG = "BeatTimer";
@@ -12,39 +19,57 @@ public class BeatTimer {
     private Runnable beatRunnable;
     private int timeSignature;
     private AtomicInteger currentTickAtomic = new AtomicInteger(1);
+    private AtomicBoolean tickActive = new AtomicBoolean(false);
+    private final Lock lock;
+    private Condition tickEvent;
 
-    BeatTimer(EventChannel.EventSink _eventTickSink, int _timeSignature) {
+    BeatTimer(EventChannel.EventSink _eventTickSink, int _timeSignature, Lock _lock, Condition _tickEvent) {
         eventTickSink = _eventTickSink;
         timeSignature = _timeSignature;
+        lock = _lock;
+        tickEvent = _tickEvent;
     }
 
     public void startBeatTimer(int bpm) {
         
         stopBeatTimer();
         handler = new Handler(Looper.getMainLooper());
-        double timerIntervalInSamples = 60 / (double) bpm;
-        if (eventTickSink!=null){
-         
+        
+        tickActive.set(true);
+        if ((handler!=null)&&(eventTickSink!=null)){
+
             beatRunnable = new Runnable() {
                 @Override
                 public void run() {
-                    int signatureNumber = currentTickAtomic.getAndIncrement();
-                    //if( currentTickAtomic.get() == timeSignature+1)
-                    //{
-                    //    currentTickAtomic.set(1);
-                    //}
-                    eventTickSink.success(signatureNumber);
-                    handler.postDelayed(this, (long) (timerIntervalInSamples * 1000));
+                    
+                    try {
+                        waitForTick();
+                        eventTickSink.success(currentTickAtomic.get());
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }                                 
+                                                         
+                    handler.post(this);
                 }
             };
 
-            handler.post(beatRunnable);
+            handler.post(beatRunnable);  
+        
         }
     }
 
-   public void sendEvent(int signatureNumber) {
-        if (eventTickSink != null) {
-            eventTickSink.success(signatureNumber);
+    public void waitForTick() throws InterruptedException {
+        lock.lock();
+        try {
+           
+            if(!tickEvent.await(1000, TimeUnit.MILLISECONDS)){
+                //Log.e(TAG, "Timeout");
+                System.out.println("Timeout reached without signal.");
+            }  // Waiting for the signal
+            
+            
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -54,6 +79,7 @@ public class BeatTimer {
             handler = null;
             beatRunnable = null;
         }
+        tickActive.set(false);
     }
 
     public void synchronizeTicks(int currentTick){
