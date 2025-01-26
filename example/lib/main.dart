@@ -1,4 +1,6 @@
 //import 'package:flutter/foundation.dart';
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:metronome/metronome.dart';
 
@@ -14,14 +16,15 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  final iconMetronomeKey = GlobalKey();
   final _metronomePlugin = Metronome();
   bool isplaying = false;
   int bpm = 120;
   int vol = 50;
-  String metronomeIcon = 'assets/metronome-left.png';
+  ValueNotifier<String> metronomeIcon = ValueNotifier<String>('assets/metronome-left.png');
   String metronomeIconRight = 'assets/metronome-right.png';
   String metronomeIconLeft = 'assets/metronome-left.png';
-  int currentTick = 1;
+  ValueNotifier<int> currentTick = ValueNotifier<int>(1);
   final List wavs = [
     'base',
     'claves',
@@ -30,6 +33,12 @@ class _MyAppState extends State<MyApp> {
     'sticks',
     'woodblock_high'
   ];
+  int prevTickTime = 0;
+
+  int getCurrentTime() {
+    return DateTime.now().millisecondsSinceEpoch;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -47,15 +56,29 @@ class _MyAppState extends State<MyApp> {
       //if (kDebugMode) {
         //print(onEvent.toString());
         //print('tick');
-      currentTick = currentTickIntern;
-      //}
-      setState(() {
-        if (metronomeIcon == metronomeIconRight) {
-          metronomeIcon = metronomeIconLeft;
-        } else {
-          metronomeIcon = metronomeIconRight;
-        }
-      });
+
+      int currentTime = getCurrentTime();
+      int diff = (currentTime - prevTickTime);
+      prevTickTime = currentTime;
+      log('Current tick app: $currentTickIntern    diff: $diff');
+      // currentTick.value = currentTickIntern;
+      // //}
+      
+      // if (metronomeIcon.value == metronomeIconRight) {
+      //   //log("left");
+      //   metronomeIcon.value = metronomeIconLeft;
+      // } else {
+      //   metronomeIcon.value = metronomeIconRight;
+      //   //log("right");
+      // }
+      
+      // setState(() {
+      //   if (metronomeIcon == metronomeIconRight) {
+      //     metronomeIcon = metronomeIconLeft;
+      //   } else {
+      //     metronomeIcon = metronomeIconRight;
+      //   }
+      // });
     });
   }
 
@@ -77,10 +100,16 @@ class _MyAppState extends State<MyApp> {
           padding: const EdgeInsets.all(10),
           child: ListView(
             children: [
-              Image.asset(
-                metronomeIcon,
-                height: 100,
-                gaplessPlayback: true,
+              //MetronomeImage(key:iconMetronomeKey,   metronomeIcon: metronomeIcon),
+              ValueListenableBuilder<String>(
+                valueListenable: metronomeIcon,
+                builder: (BuildContext context, value, Widget? child) {
+                  return Image.asset(
+                      metronomeIcon.value,
+                      height: 100,
+                      gaplessPlayback: true,
+                    );
+                },
               ),
               Text(
                 'BPM:$bpm',
@@ -137,24 +166,28 @@ class _MyAppState extends State<MyApp> {
             ],
           ),
         ),
-        bottomNavigationBar: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: List.generate(4, (index) {
-            return Row(
-              children: [
-          Radio<int>(
-            value: index + 1,
-            groupValue: currentTick,
-            onChanged: (int? value) {
-              //setState(() {
-              //  currentTick = value!;
-              //});
-            },
-          ),
-          Text('${index + 1}'),
-              ],
-            );
-          }),
+        bottomNavigationBar: ValueListenableBuilder<int>(
+                valueListenable: currentTick,
+                builder: (BuildContext context, value, Widget? child) {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: List.generate(4, (index) {
+              return Row(
+                children: [
+            Radio<int>(
+              value: index + 1,
+              groupValue: currentTick.value,
+              onChanged: (int? value) {
+                //setState(() {
+                //  currentTick = value!;
+                //});
+              },
+            ),
+            Text('${index + 1}'),
+                ],
+              );
+            }),
+          );}
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () async {
@@ -178,3 +211,24 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
+
+
+//  class MetronomeImage extends StatefulWidget {
+//      const MetronomeImage({Key? key, required this.metronomeIcon}) : super(key: key);
+
+//      final String metronomeIcon;
+
+//       @override
+//                 MetronomeImageState createState() => MetronomeImageState();
+//   }
+
+// class MetronomeImageState extends State<MetronomeImage> {
+//   @override
+//   Widget build(BuildContext context) {
+//     return Image.asset(
+//       widget.metronomeIcon,
+//       height: 100,
+//       gaplessPlayback: true,
+//     );
+//   }
+// }

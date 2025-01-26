@@ -10,9 +10,14 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
+import android.app.Activity;
+
+import io.flutter.embedding.engine.plugins.activity.ActivityAware;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
+
 
 /** MetronomePlugin */
-public class MetronomePlugin implements FlutterPlugin, MethodCallHandler {
+public class MetronomePlugin implements FlutterPlugin, MethodCallHandler, ActivityAware {
   /// The MethodChannel that will the communication between Flutter and native
   /// Android
   ///
@@ -27,13 +32,36 @@ public class MetronomePlugin implements FlutterPlugin, MethodCallHandler {
   /// Metronome
   private Metronome metronome = null;
   private Context context;
+  private Activity activity;
+
+  @Override 
+  public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
+      activity = binding.getActivity(); // ✅ Prawidłowy sposób pobrania Activity
+  }
+
+  @Override 
+  public void onDetachedFromActivity() {
+      activity = null;
+  }
+
+  @Override
+    public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
+        // Implement logic if needed, otherwise leave it empty
+        activity = binding.getActivity();
+  }
+
+  @Override
+    public void onDetachedFromActivityForConfigChanges() {
+        // Możesz dodać tutaj kod, jeśli trzeba coś zrobić przy odłączeniu aktywności w wyniku zmiany konfiguracji.
+    }
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
+    
     channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "metronome");
     channel.setMethodCallHandler(this);
     context = flutterPluginBinding.getApplicationContext();
-    //
+    
     eventTick = new EventChannel(flutterPluginBinding.getBinaryMessenger(),
         "metronome_tick");
     eventTick.setStreamHandler(new EventChannel.StreamHandler() {
@@ -48,6 +76,8 @@ public class MetronomePlugin implements FlutterPlugin, MethodCallHandler {
       }
     });
   }
+
+
 
   @Override
   public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
@@ -108,7 +138,7 @@ public class MetronomePlugin implements FlutterPlugin, MethodCallHandler {
       boolean enableTickCallback = call.argument("enableTickCallback");
       metronome = new Metronome(context, _mainFilePath, _accentedFilePath);
       if (enableTickCallback && eventTickSink!=null){
-        metronome.enableTickCallback(eventTickSink);
+        metronome.enableTickCallback(eventTickSink, activity);
       }
       setVolume(call);
       setBPM(call);
