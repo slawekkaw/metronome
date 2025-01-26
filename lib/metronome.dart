@@ -24,7 +24,12 @@ class Metronome {
   }) async {
     if (!PlatformUtils.isWeb) {
       mainPath = await saveAudioAssetsToLocal(mainPath);
-      accentedPath = await saveAudioAssetsToLocal(accentedPath!);
+      if (accentedPath != null){
+        accentedPath = await saveAudioAssetsToLocal(accentedPath);
+      }
+      else{
+        accentedPath = mainPath;
+      }
     }
     MetronomePlatform.instance.init(
       mainPath,
