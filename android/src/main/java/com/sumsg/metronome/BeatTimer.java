@@ -6,35 +6,53 @@ import io.flutter.plugin.common.EventChannel;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class BeatTimer {
+    
     // private final String TAG = "BeatTimer";
     private final EventChannel.EventSink eventTickSink;
     private Handler handler;
     private Runnable beatRunnable;
-    private int timeSignature;
     private AtomicInteger currentTickAtomic = new AtomicInteger(1);
 
-    BeatTimer(EventChannel.EventSink _eventTickSink, int _timeSignature) {
+    BeatTimer(EventChannel.EventSink _eventTickSink) {
         eventTickSink = _eventTickSink;
-        timeSignature = _timeSignature;
+        handler = new Handler(Looper.getMainLooper());
     }
 
-    public void startBeatTimer(int bpm) {
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            stopBeatTimer();
+            handler = null;
+        } finally {
+            super.finalize();
+        }
+    }
+
+    public void startBeatTimer(int bpm, int runForTicks) {
         
         stopBeatTimer();
-        handler = new Handler(Looper.getMainLooper());
-        double timerIntervalInSamples = 60 / (double) bpm;
+        currentTickAtomic.set(1);
+        //handler = new Handler(Looper.getMainLooper());
+        double timerIntervalInSamples = 60 / (double) bpm * 1000;
         if (eventTickSink!=null){
          
             beatRunnable = new Runnable() {
                 @Override
                 public void run() {
-                    int signatureNumber = currentTickAtomic.get();
-                    eventTickSink.success(signatureNumber);
-                    handler.postDelayed(this, (long) (timerIntervalInSamples * 1000));
+                    eventTickSink.success(currentTickAtomic.get());
+                 
+                    if( currentTickAtomic.get() < runForTicks)
+                    {
+                       currentTickAtomic.getAndIncrement();
+                       handler.postDelayed(this, (long) (timerIntervalInSamples));
+                    }else{
+                        handler.removeCallbacks(beatRunnable);// stops the timer
+                        beatRunnable = null;
+                    }
                 }
             };
 
-            handler.post(beatRunnable);
+            handler.post(beatRunnable);// start immadietely
         }
     }
 
@@ -47,12 +65,8 @@ public class BeatTimer {
     public void stopBeatTimer() {
         if (handler != null && beatRunnable != null) {
             handler.removeCallbacks(beatRunnable);
-            handler = null;
             beatRunnable = null;
         }
     }
 
-    public void synchronizeTicks(int currentTick){
-        currentTickAtomic.set(currentTick);
-    }
 }

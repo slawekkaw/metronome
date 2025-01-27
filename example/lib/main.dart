@@ -57,20 +57,20 @@ class _MyAppState extends State<MyApp> {
         //print(onEvent.toString());
         //print('tick');
 
-      int currentTime = getCurrentTime();
-      int diff = (currentTime - prevTickTime);
-      prevTickTime = currentTime;
-      log('Current tick app: $currentTickIntern    diff: $diff');
-      // currentTick.value = currentTickIntern;
+      //int currentTime = getCurrentTime();
+      //int diff = (currentTime - prevTickTime);
+      //prevTickTime = currentTime;
+      log('Current tick app: $currentTickIntern ');
+      currentTick.value = currentTickIntern;
       // //}
       
-      // if (metronomeIcon.value == metronomeIconRight) {
-      //   //log("left");
-      //   metronomeIcon.value = metronomeIconLeft;
-      // } else {
-      //   metronomeIcon.value = metronomeIconRight;
-      //   //log("right");
-      // }
+      if (metronomeIcon.value == metronomeIconRight) {
+        //log("left");
+        metronomeIcon.value = metronomeIconLeft;
+      } else {
+        metronomeIcon.value = metronomeIconRight;
+        //log("right");
+      }
       
       // setState(() {
       //   if (metronomeIcon == metronomeIconRight) {
