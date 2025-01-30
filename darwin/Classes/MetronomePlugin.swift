@@ -7,12 +7,12 @@ import Cocoa
 public class MetronomePlugin: NSObject, FlutterPlugin {
     var channel:FlutterMethodChannel?
     var metronome:Metronome?
-    //
+    
     private let eventTickListener: EventTickHandler = EventTickHandler()
     private var eventTick: FlutterEventChannel?
-    //
+    
     init(with registrar: FlutterPluginRegistrar) {}
-    //
+    
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = MetronomePlugin(with: registrar)
 #if os(iOS)
@@ -24,7 +24,7 @@ public class MetronomePlugin: NSObject, FlutterPlugin {
 
         registrar.addApplicationDelegate(instance)
         registrar.addMethodCallDelegate(instance, channel: instance.channel!)
-        //
+        
         instance.eventTick = FlutterEventChannel(name: "metronome_tick", binaryMessenger: messenger)
         instance.eventTick?.setStreamHandler(instance.eventTickListener )
     }
@@ -82,18 +82,21 @@ public class MetronomePlugin: NSObject, FlutterPlugin {
     }
     private func metronomeInit( attributes:NSDictionary?) {
         let mainFilePath: String = (attributes?["path"] as? String) ?? ""
+        let accentedFilePath: String = (attributes?["accentedPath"] as? String) ?? ""
         let mainFileUrl = URL(fileURLWithPath: mainFilePath);
+        let accentedFileUrl = URL(fileURLWithPath: accentedFilePath);
        
 
         if mainFilePath != "" {
             let enableSession: Bool = (attributes?["enableSession"] as? Bool) ?? true
             let enableTickCallback: Bool = (attributes?["enableTickCallback"] as? Bool) ?? true
-            metronome =  Metronome( mainFile: mainFileUrl,accentedFile: mainFileUrl,enableSession:enableSession)
+            metronome =  Metronome( mainFile: mainFileUrl,accentedFile: accentedFileUrl,enableSession:enableSession)
             if(enableTickCallback){
                 metronome?.enableTickCallback(_eventTickSink: eventTickListener);
             }
             setVolume(attributes: attributes)
             setBPM(attributes: attributes)
+            setTimeSignature(attributes: attributes)
         }
     }
     private func setAudioFile( attributes:NSDictionary?) {
@@ -109,6 +112,12 @@ public class MetronomePlugin: NSObject, FlutterPlugin {
         if metronome != nil {
             let volume: Double = (attributes?["volume"] as? Double) ?? 0.5
             metronome?.setVolume(vol: Float(volume))
+        }
+    }
+    private func setTimeSignature( attributes:NSDictionary?) {
+        if metronome != nil {
+            let timeSignature: Int = (attributes?["timeSignature"] as? Int) ?? 4
+            metronome?.setTimeSignature(timeSignature: timeSignature)
         }
     }
 }

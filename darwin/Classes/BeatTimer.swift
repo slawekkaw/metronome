@@ -1,5 +1,6 @@
 class BeatTimer {
     private var eventTick: EventTickHandler
+    private var currentTick = 1
     
     init(eventTick: EventTickHandler) {
         self.eventTick = eventTick
@@ -9,15 +10,16 @@ class BeatTimer {
            beatTimer?.invalidate()
        }
     }
-    func startBeatTimer(bpm: Int) {
+    func startBeatTimer(bpm: Int, runForTicks: Int) {
         stopBeatTimer()
         let timerIntervallInSamples = 60 / Double(bpm)
-//        var now1 = Date().timeIntervalSince1970
         beatTimer = Timer.scheduledTimer(withTimeInterval: timerIntervallInSamples, repeats: true) { timer in
-//            let now2 = Date().timeIntervalSince1970
-//            print("tick1:"+String(describing: timerIntervallInSamples)+",diff:"+String(describing: (now2-now1)))
-//            now1 = now2
-            self.eventTick.send(res: true)
+            self.eventTick.send(res: self.currentTick)
+            if( self.currentTick < runForTicks){
+                self.currentTick += 1
+            }else{
+                self.stopBeatTimer()
+            }
         }
     }
     func stopBeatTimer() {
