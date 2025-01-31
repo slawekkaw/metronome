@@ -10,11 +10,17 @@ class Metronome {
     private var audioEngine: AVAudioEngine
 
     private var mixerNode: AVAudioMixerNode
+
+    private var bufferAccented: AVAudioPCMBuffer
+    private var buffer: AVAudioPCMBuffer
+
+
     //var
     public var audioBpm: Int = 120
     public var audioVolume: Float = 0
     public var timeSignature: Int = 4
     private var currentBeat: Int = 1
+    private var audioActive: Bool = false;
     //
     
     init(mainFile: URL,accentedFile: URL,enableSession: Bool) {
@@ -69,26 +75,32 @@ class Metronome {
             }
         }
         UIApplication.shared.beginReceivingRemoteControlEvents()
-#endif
+#endif    
+
+        buffer = AVAudioPCMBuffer()
+        bufferAccented = AVAudioPCMBuffer()
+
     }
+
     public func enableTickCallback(_eventTickSink: EventTickHandler) {
        beatTimer = BeatTimer(eventTick: _eventTickSink)
     }
-    private func generateBuffer(bpm: Int) -> AVAudioPCMBuffer {
+    private func generateBuffer(bpm: Int, audioFile: AVAudioFile ) -> AVAudioPCMBuffer {
 
-        audioFileMain.framePosition = 0
-        let beatLength = AVAudioFrameCount(audioFileMain.processingFormat.sampleRate * 60 / Double(bpm) )
-        let bufferMainClick = AVAudioPCMBuffer(pcmFormat: audioFileMain.processingFormat,
+        audioFile.framePosition = 0
+        let beatLength = AVAudioFrameCount(audioFile.processingFormat.sampleRate * 60 / Double(bpm) )
+        audioFile.framePosition = 0
+        let bufferMainClick = AVAudioPCMBuffer(pcmFormat: audioFile.processingFormat,
                                                frameCapacity: beatLength)!
-        try! audioFileMain.read(into: bufferMainClick)
+        try! audioFile.read(into: bufferMainClick)
         bufferMainClick.frameLength = beatLength
-        let bufferBar = AVAudioPCMBuffer(pcmFormat: audioFileMain.processingFormat,
+        let bufferBar = AVAudioPCMBuffer(pcmFormat: audioFile.processingFormat,
                                          frameCapacity:  beatLength)!
 //        bufferBar.frameLength = 4 * beatLength
         bufferBar.frameLength = beatLength
 
         // don't forget if we have two or more channels then we have to multiply memory pointee at channels count
-        let channelCount = Int(audioFileMain.processingFormat.channelCount)
+        let channelCount = Int(audioFile.processingFormat.channelCount)
         let mainClickArray = Array(
             UnsafeBufferPointer(start: bufferMainClick.floatChannelData![0],
                                 count: channelCount * Int(beatLength))
@@ -100,30 +112,67 @@ class Metronome {
                                                    count: channelCount * Int(bufferBar.frameLength))
         return bufferBar
     }
+
+    private func playOneBar() {
+        self.audioPlayerNode.scheduleBuffer(self.bufferAccented, at: nil, options: .interrupts,  completionHandler: self.handleBeatCompletion)  
+    }
+
+
+    private func handleBeatCompletion() {
+        
+        if self.currentBeat >= self.timeSignature {
+            self.currentBeat = 1
+            if( audioActive){
+                playOneBar()
+            }
+        }else{
+            self.currentBeat += 1
+            if( audioActive){
+                self.audioPlayerNode.scheduleBuffer(self.buffer, at: nil,  completionHandler: self.handleBeatCompletion)  
+            }
+        }
+    }
+
+
     func play(bpm: Int) {
         audioBpm = bpm
-        let buffer = generateBuffer(bpm: bpm)
 
-        if audioPlayerNode.isPlaying {
-            audioPlayerNode.scheduleBuffer(buffer, at: nil, options: .interruptsAtLoop, completionHandler: nil)
-        } else {
+        self.buffer = generateBuffer(bpm: bpm, audioFile: audioFileMain)
+        self.bufferAccented = generateBuffer(bpm: bpm, audioFile: audioFileAccented)
+
+
+        //var playActive = true;
+        self.currentBeat = 1
+        audioActive = true;
+
+        debugPrint("Start bar")
+            //play one tact
+        //self.audioPlayerNode.scheduleBuffer(self.bufferAccented, at: nil,  completionHandler: self.handleBeatCompletion)  
+        playOneBar()
+          
+      
+        // Sprawdź, czy audioPlayerNode nie odtwarza, i rozpocznij odtwarzanie, jeśli to konieczne
+        if !audioPlayerNode.isPlaying {
             self.audioPlayerNode.play()
         }
 
-        self.audioPlayerNode.scheduleBuffer(buffer, at: nil, options: .loops, completionHandler: nil)
-        //
         if(beatTimer != nil){
             beatTimer?.startBeatTimer(bpm: bpm, runForTicks:timeSignature)
         }
     }
     func pause() {
         audioPlayerNode.pause()
+        self.currentBeat = 1
         if(beatTimer != nil){
             beatTimer?.stopBeatTimer()
         }
     }
     func stop() {
-        audioPlayerNode.stop()
+        audioActive = false;
+        if audioPlayerNode.isPlaying {
+            self.audioPlayerNode.stop()
+        }
+        self.currentBeat = 1
         if(beatTimer != nil){
             beatTimer?.stopBeatTimer()
         }

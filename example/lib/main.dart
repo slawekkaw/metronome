@@ -192,7 +192,7 @@ class _MyAppState extends State<MyApp> {
         floatingActionButton: FloatingActionButton(
           onPressed: () async {
             if (isplaying) {
-              _metronomePlugin.pause();
+              _metronomePlugin.stop();
               isplaying = false;
             } else {
               _metronomePlugin.setVolume(vol);
