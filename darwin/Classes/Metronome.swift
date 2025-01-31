@@ -28,27 +28,14 @@ class Metronome {
         audioFileMain = try! AVAudioFile(forReading: mainFile)
         audioFileAccented = try! AVAudioFile(forReading: accentedFile)
 
-        audioPlayerNode = AVAudioPlayerNode()
-        //audioPlayerAccentedNode = AVAudioPlayerNode()
-        
+        audioPlayerNode = AVAudioPlayerNode()      
         audioEngine = AVAudioEngine()
-        //audioEngineAccented = AVAudioEngine()
-
         audioEngine.attach(self.audioPlayerNode)
-        //audioEngineAccented.attach(self.audioPlayerNode)
-        
         mixerNode = audioEngine.mainMixerNode
-        //mixerNodeAccented = audioEngineAccented.mainMixerNode
-
-        mixerNode.outputVolume = audioVolume
-        //mixerNodeAccented.outputVolume = audioVolume
-        
+        mixerNode.outputVolume = audioVolume             
         audioEngine.connect(audioPlayerNode, to: mixerNode, format: audioFileMain.processingFormat)
-        //audioEngineAccented.connect(audioPlayerAccentedNode, to: mixerNodeAccented, format: audioFileAccented.processingFormat)
-
         audioEngine.prepare()
-        //audioEngineAccented.prepare()
-
+      
         if !self.audioEngine.isRunning {
             do {
                 try self.audioEngine.start()
@@ -56,13 +43,6 @@ class Metronome {
                 print(error)
             }
         }
-        // if !self.audioEngineAccented.isRunning {
-        //     do {
-        //         try self.audioEngineAccented.start()
-        //     } catch {
-        //         print(error)
-        //     }
-        // }
 #if os(iOS)
         if enableSession {
             let session = AVAudioSession.sharedInstance()
@@ -114,6 +94,9 @@ class Metronome {
     }
 
     private func playOneBar() {
+         if(beatTimer != nil){
+            beatTimer?.startBeatTimer(bpm: audioBpm, runForTicks:timeSignature)
+         }
         self.audioPlayerNode.scheduleBuffer(self.bufferAccented, at: nil, options: .interrupts,  completionHandler: self.handleBeatCompletion)  
     }
 
@@ -136,36 +119,28 @@ class Metronome {
 
     func play(bpm: Int) {
         audioBpm = bpm
-
         self.buffer = generateBuffer(bpm: bpm, audioFile: audioFileMain)
         self.bufferAccented = generateBuffer(bpm: bpm, audioFile: audioFileAccented)
-
-
-        //var playActive = true;
         self.currentBeat = 1
         audioActive = true;
+        if(beatTimer != nil){
+            beatTimer?.startBeatTimer(bpm: audioBpm, runForTicks:timeSignature)
+        }
+        playOneBar()   
 
-        debugPrint("Start bar")
-            //play one tact
-        //self.audioPlayerNode.scheduleBuffer(self.bufferAccented, at: nil,  completionHandler: self.handleBeatCompletion)  
-        playOneBar()
-          
-      
-        // Sprawdź, czy audioPlayerNode nie odtwarza, i rozpocznij odtwarzanie, jeśli to konieczne
         if !audioPlayerNode.isPlaying {
             self.audioPlayerNode.play()
         }
 
-        if(beatTimer != nil){
-            beatTimer?.startBeatTimer(bpm: bpm, runForTicks:timeSignature)
-        }
+       
     }
     func pause() {
-        audioPlayerNode.pause()
-        self.currentBeat = 1
-        if(beatTimer != nil){
-            beatTimer?.stopBeatTimer()
-        }
+        self.stop()
+        // audioPlayerNode.pause()
+        // self.currentBeat = 1
+        // if(beatTimer != nil){
+        //     beatTimer?.stopBeatTimer()
+        // }
     }
     func stop() {
         audioActive = false;

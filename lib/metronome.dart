@@ -4,6 +4,8 @@ import 'package:metronome/platform_utils.dart';
 import 'package:path_provider/path_provider.dart';
 import 'metronome_platform_interface.dart';
 
+
+
 class Metronome {
   ///initialize the metronome
   /// ```
