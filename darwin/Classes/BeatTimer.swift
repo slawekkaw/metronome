@@ -12,8 +12,10 @@ class BeatTimer {
        }
     }
     func startBeatTimer(bpm: Int, runForTicks: Int) {
-         DispatchQueue.main.async {
-            NSLog("Starting beat timer with bpm: \(bpm) and runForTicks: \(runForTicks)")
+        //NSLog("Event: Start startBeatTimer")
+        
+        DispatchQueue.main.async {
+            //NSLog("EVENT: Starting beat timer with bpm: \(bpm) and runForTicks: \(runForTicks)")
             self.currentTick = 1
             self.eventTick.send(res: self.currentTick) // First tick sent immediately
             self.currentTick += 1

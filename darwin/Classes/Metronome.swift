@@ -24,7 +24,6 @@ class Metronome {
     //
     
     init(mainFile: URL,accentedFile: URL,enableSession: Bool) {
-        //
         audioFileMain = try! AVAudioFile(forReading: mainFile)
         audioFileAccented = try! AVAudioFile(forReading: accentedFile)
 
@@ -56,10 +55,9 @@ class Metronome {
         }
         UIApplication.shared.beginReceivingRemoteControlEvents()
 #endif    
-
+    
         buffer = AVAudioPCMBuffer()
         bufferAccented = AVAudioPCMBuffer()
-
     }
 
     public func enableTickCallback(_eventTickSink: EventTickHandler) {
@@ -94,21 +92,36 @@ class Metronome {
     }
 
     private func playOneBar() {
-         if(beatTimer != nil){
-            beatTimer?.startBeatTimer(bpm: audioBpm, runForTicks:timeSignature)
-         }
+
+        let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+                let timestamp = dateFormatter.string(from: Date())
+
+        NSLog("\(timestamp) Start playOneBar, current beat: \(currentBeat)")
+        if(beatTimer != nil){
+           beatTimer?.startBeatTimer(bpm: audioBpm, runForTicks:timeSignature)
+        }
         self.audioPlayerNode.scheduleBuffer(self.bufferAccented, at: nil, options: .interrupts,  completionHandler: self.handleBeatCompletion)  
     }
 
 
     private func handleBeatCompletion() {
-        
+        //NSLog("Start handleBeatCompletion, , current beat: \(currentBeat)")
         if self.currentBeat >= self.timeSignature {
             self.currentBeat = 1
             if( audioActive){
+                // let dateFormatter = DateFormatter()
+                // dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+                // let timestamp = dateFormatter.string(from: Date())
+                // NSLog("\(timestamp) restart BAR, current beat: \(currentBeat)")
                 playOneBar()
             }
         }else{
+            // let dateFormatter = DateFormatter()
+            //     dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+            //     let timestamp = dateFormatter.string(from: Date())
+            
+            // NSLog("\(timestamp) start next BEAT , current beat: \(currentBeat)")
             self.currentBeat += 1
             if( audioActive){
                 self.audioPlayerNode.scheduleBuffer(self.buffer, at: nil,  completionHandler: self.handleBeatCompletion)  
@@ -118,17 +131,20 @@ class Metronome {
 
 
     func play(bpm: Int) {
+        NSLog("Starting beat timer with bpm: \(bpm) and timeSignature: \(timeSignature)")
         audioBpm = bpm
         self.buffer = generateBuffer(bpm: bpm, audioFile: audioFileMain)
         self.bufferAccented = generateBuffer(bpm: bpm, audioFile: audioFileAccented)
         self.currentBeat = 1
         audioActive = true;
-        if(beatTimer != nil){
-            beatTimer?.startBeatTimer(bpm: audioBpm, runForTicks:timeSignature)
-        }
+        // if(beatTimer != nil){
+        //     beatTimer?.startBeatTimer(bpm: audioBpm, runForTicks:timeSignature)
+        // }
+        //NSLog("Before playOneBar")
         playOneBar()   
 
         if !audioPlayerNode.isPlaying {
+            //NSLog("Start: self.audioPlayerNode.play()")
             self.audioPlayerNode.play()
         }
 
@@ -143,6 +159,7 @@ class Metronome {
         // }
     }
     func stop() {
+        NSLog("Stop")
         audioActive = false;
         if audioPlayerNode.isPlaying {
             self.audioPlayerNode.stop()
@@ -153,6 +170,7 @@ class Metronome {
         }
     }
     func setBPM(bpm: Int) {
+        NSLog("Set BPM")
         audioBpm = bpm
         if audioPlayerNode.isPlaying {
             play(bpm: self.audioBpm)
@@ -162,6 +180,7 @@ class Metronome {
         }
     }
     func setTimeSignature(timeSignature: Int) {
+        NSLog("setTimeSignature")
         self.timeSignature = timeSignature
         if audioPlayerNode.isPlaying {
             play(bpm: self.audioBpm)
@@ -194,6 +213,7 @@ class Metronome {
         }
     }
     func setAudioFile(mainFile: URL) {
+        NSLog("setAudioFile")
         audioFileMain = try! AVAudioFile(forReading: mainFile)
         if isPlaying {
             stop()
