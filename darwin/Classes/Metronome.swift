@@ -130,9 +130,10 @@ class Metronome {
     }
 
 
-    func play(bpm: Int) {
+    func play(bpm: Int, timeSignature: Int) {
         NSLog("Starting beat timer with bpm: \(bpm) and timeSignature: \(timeSignature)")
-        audioBpm = bpm
+        self.audioBpm = bpm
+        self.timeSignature = timeSignature
         self.buffer = generateBuffer(bpm: bpm, audioFile: audioFileMain)
         self.bufferAccented = generateBuffer(bpm: bpm, audioFile: audioFileAccented)
         self.currentBeat = 1
@@ -173,7 +174,7 @@ class Metronome {
         NSLog("Set BPM")
         audioBpm = bpm
         if audioPlayerNode.isPlaying {
-            play(bpm: self.audioBpm)
+            play(bpm: self.audioBpm, timeSignature: self.timeSignature)
             if(beatTimer != nil){
                 beatTimer?.startBeatTimer(bpm: bpm, runForTicks:timeSignature)
             }
@@ -183,7 +184,7 @@ class Metronome {
         NSLog("setTimeSignature")
         self.timeSignature = timeSignature
         if audioPlayerNode.isPlaying {
-            play(bpm: self.audioBpm)
+            play(bpm: self.audioBpm, timeSignature: self.timeSignature)
             if(beatTimer != nil){
                 beatTimer?.startBeatTimer(bpm: audioBpm, runForTicks:timeSignature)
             }
@@ -217,7 +218,7 @@ class Metronome {
         audioFileMain = try! AVAudioFile(forReading: mainFile)
         if isPlaying {
             stop()
-            play(bpm: audioBpm)
+            play(bpm: audioBpm, timeSignature: timeSignature)
         }
     }
 }

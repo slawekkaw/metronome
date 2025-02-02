@@ -36,7 +36,8 @@ public class MetronomePlugin: NSObject, FlutterPlugin {
                 break;
               case "play":
               let bpm: Int = (attributes?["bpm"] as? Int) ?? (metronome?.audioBpm)!
-                  metronome?.play(bpm: bpm)
+              let timeSignature: Int = (attributes?["timeSignature"] as? Int) ?? (metronome?.timeSignature)!
+                  metronome?.play(bpm: bpm, timeSignature: timeSignature)
                 break;
               case "pause":
                   metronome?.pause()
