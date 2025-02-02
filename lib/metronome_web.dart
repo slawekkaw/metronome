@@ -64,7 +64,7 @@ class MetronomeWeb extends MetronomePlatform {
   }
 
   @override
-  Future<void> play(int bpm) async {
+  Future<void> play(int bpm, int timeSignature) async {
     if (bpm <= 0) {
       throw Exception('BPM must be greater than 0');
     }

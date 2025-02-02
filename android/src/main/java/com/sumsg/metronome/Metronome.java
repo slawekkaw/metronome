@@ -36,7 +36,7 @@ public class Metronome {
         mTook = AudioGenerator.loadSampleFromWav(path);
         if (play) {
             stop();
-            play(mBpm);
+            play(mBpm, timeSignature);
         }
     }
 
@@ -44,7 +44,7 @@ public class Metronome {
         mAccentedTook = AudioGenerator.loadSampleFromWav(path);
         if (play) {
             stop();
-            play(mBpm);
+            play(mBpm, timeSignature);
         }
     }
 
@@ -81,9 +81,10 @@ public class Metronome {
         }
     }
 
-    public void play(int bpm) {
+    public void play(int bpm, int timeSignature) {
         isInitialized();
         setBPM(bpm);
+        setTimeSignature(timeSignature);
         play = true;
         audioGenerator.createPlayer(context, mVolume);
         calcSilence();
@@ -95,15 +96,31 @@ public class Metronome {
             do {      
                 if(currentBeat==1 ){
                                
-                    audioGenerator.writeSound(sampleAccented, Math.min(sampleAccented.length, mBeatDivisionSampleCount));
-                    audioGenerator.writeSound(mTookAccentSilenceSoundArray);
-                     if (beatTimer != null) {
+                    synchronized (mLock) {
+                        if(!play)
+                            return;
+                        audioGenerator.writeSound(sampleAccented, Math.min(sampleAccented.length, mBeatDivisionSampleCount));
+                    }
+                    synchronized (mLock) {
+                        if(!play)
+                            return;
+                        audioGenerator.writeSound(mTookAccentSilenceSoundArray);
+                    }
+                    if (beatTimer != null) {
                         beatTimer.startBeatTimer(bpm, timeSignature);// Start first tick
                     }     
  
-                }else{    
-                    audioGenerator.writeSound(sampleStandard, Math.min(sampleStandard.length, mBeatDivisionSampleCount));
-                    audioGenerator.writeSound(mTookSilenceSoundArray);
+                }else{ 
+                    synchronized (mLock) {
+                        if(!play)
+                            return;   
+                        audioGenerator.writeSound(sampleStandard, Math.min(sampleStandard.length, mBeatDivisionSampleCount));
+                    }
+                    synchronized (mLock) {
+                        if(!play)
+                            return;
+                        audioGenerator.writeSound(mTookSilenceSoundArray);
+                    }
                 }
 
                 if(currentBeat==timeSignature){
@@ -134,7 +151,9 @@ public class Metronome {
     public void stop() {
         if (audioGenerator.getAudioTrack() != null) {
             play = false;
-            audioGenerator.destroyAudioTrack();
+            synchronized (mLock) {   
+              audioGenerator.destroyAudioTrack();
+            }
         }
         if (beatTimer != null) {
             beatTimer.stopBeatTimer();

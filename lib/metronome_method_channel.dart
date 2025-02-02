@@ -47,13 +47,14 @@ class MethodChannelMetronome extends MetronomePlatform {
   }
 
   @override
-  Future<void> play(int bpm) async {
+  Future<void> play(int bpm, int timeSignature) async {
     if (bpm <= 0) {
       throw Exception('BPM must be greater than 0');
     }
     try {
       await methodChannel.invokeMethod<void>('play', {
         'bpm': bpm,
+        'timeSignature': timeSignature,
       });
     } catch (e) {
       if (kDebugMode) {

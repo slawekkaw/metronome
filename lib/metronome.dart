@@ -45,8 +45,8 @@ class Metronome {
   }
 
   ///play the metronome
-  Future<void> play(int bpm) async {
-    return MetronomePlatform.instance.play(bpm);
+  Future<void> play(int bpm, int timeSignature) async {
+    return MetronomePlatform.instance.play(bpm, timeSignature);
   }
 
   ///pause the metronome

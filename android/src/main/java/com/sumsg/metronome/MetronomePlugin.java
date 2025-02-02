@@ -59,7 +59,10 @@ public class MetronomePlugin implements FlutterPlugin, MethodCallHandler {
         Integer _bpm = call.argument("bpm");
         if (_bpm == null)
           _bpm = 120;
-        metronome.play(_bpm);
+        Integer _timeSignature = call.argument("timeSignature");
+        if (_timeSignature == null)
+          _timeSignature = 4;
+        metronome.play(_bpm, _timeSignature);
         break;
       case "pause":
         metronome.pause();

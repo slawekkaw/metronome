@@ -196,7 +196,7 @@ class _MyAppState extends State<MyApp> {
               isplaying = false;
             } else {
               _metronomePlugin.setVolume(vol);
-              _metronomePlugin.play(bpm);
+              _metronomePlugin.play(bpm, 4);
               isplaying = true;
             }
             // int? bpm2 = await _metronomePlugin.getBPM();

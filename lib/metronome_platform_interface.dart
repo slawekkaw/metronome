@@ -35,7 +35,7 @@ abstract class MetronomePlatform extends PlatformInterface {
     throw UnimplementedError('init() has not been implemented.');
   }
 
-  Future<void> play(int bpm) {
+  Future<void> play(int bpm, int timeSignature) {
     throw UnimplementedError('play() has not been implemented.');
   }
 
