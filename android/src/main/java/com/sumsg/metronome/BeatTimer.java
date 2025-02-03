@@ -11,7 +11,8 @@ public class BeatTimer {
     private final EventChannel.EventSink eventTickSink;
     private Handler handler;
     private Runnable beatRunnable;
-    private AtomicInteger currentTickAtomic = new AtomicInteger(1);
+    //private AtomicInteger currentTickAtomic = new AtomicInteger(1);
+    private int currentTick = 1;
 
     BeatTimer(EventChannel.EventSink _eventTickSink) {
         eventTickSink = _eventTickSink;
@@ -29,21 +30,23 @@ public class BeatTimer {
     }
 
     public void startBeatTimer(int bpm, int runForTicks) {
-        
+       
         stopBeatTimer();
-        currentTickAtomic.set(1);
+        //currentTickAtomic.set(1);
+        currentTick = 1;
         //handler = new Handler(Looper.getMainLooper());
         double timerIntervalInSamples = 60 / (double) bpm * 1000;
         if (eventTickSink!=null){
          
             beatRunnable = new Runnable() {
                 @Override
-                public void run() {
-                    eventTickSink.success(currentTickAtomic.get());
-                 
-                    if( currentTickAtomic.get() < runForTicks)
+                public void run() {        
+          
+                    eventTickSink.success(currentTick);
+                
+                    if( currentTick < runForTicks)
                     {
-                       currentTickAtomic.getAndIncrement();
+                       currentTick++;
                        handler.postDelayed(this, (long) (timerIntervalInSamples));
                     }else{
                         handler.removeCallbacks(beatRunnable);// stops the timer

@@ -4,8 +4,6 @@ import 'package:metronome/platform_utils.dart';
 import 'package:path_provider/path_provider.dart';
 import 'metronome_platform_interface.dart';
 
-
-
 class Metronome {
   ///initialize the metronome
   /// ```
@@ -26,22 +24,19 @@ class Metronome {
   }) async {
     if (!PlatformUtils.isWeb) {
       mainPath = await saveAudioAssetsToLocal(mainPath);
-      if (accentedPath != null){
+      if (accentedPath != null) {
         accentedPath = await saveAudioAssetsToLocal(accentedPath);
-      }
-      else{
+      } else {
         accentedPath = mainPath;
       }
     }
-    MetronomePlatform.instance.init(
-      mainPath,
-      bpm: bpm,
-      volume: volume,
-      enableSession: enableSession,
-      enableTickCallback: enableTickCallback,
-      accentedPath: accentedPath,
-      timeSignature: timeSignature
-    );
+    MetronomePlatform.instance.init(mainPath,
+        bpm: bpm,
+        volume: volume,
+        enableSession: enableSession,
+        enableTickCallback: enableTickCallback,
+        accentedPath: accentedPath,
+        timeSignature: timeSignature);
   }
 
   ///play the metronome

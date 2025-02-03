@@ -91,37 +91,46 @@ class Metronome {
         return bufferBar
     }
 
-    private func playOneBar() {
+    private func playOneBar(firstTime: Bool = false) {
 
         let dateFormatter = DateFormatter()
                 dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
                 let timestamp = dateFormatter.string(from: Date())
 
         NSLog("\(timestamp) Start playOneBar, current beat: \(currentBeat)")
+        var optionsVal: AVAudioPlayerNodeBufferOptions = firstTime ? .interrupts : []
+        if firstTime {
+            optionsVal = .interrupts
+        }
+
         if(beatTimer != nil){
            beatTimer?.startBeatTimer(bpm: audioBpm, runForTicks:timeSignature)
+           
         }
-        self.audioPlayerNode.scheduleBuffer(self.bufferAccented, at: nil, options: .interrupts,  completionHandler: self.handleBeatCompletion)  
+        self.audioPlayerNode.scheduleBuffer(self.bufferAccented, at: nil, options: optionsVal, completionHandler: self.handleBeatCompletion)
     }
 
 
     private func handleBeatCompletion() {
-        //NSLog("Start handleBeatCompletion, , current beat: \(currentBeat)")
+        let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+                let timestamp = dateFormatter.string(from: Date())
+        NSLog("\(timestamp) Start handleBeatCompletion, , current beat: \(currentBeat)")
         if self.currentBeat >= self.timeSignature {
             self.currentBeat = 1
             if( audioActive){
                 // let dateFormatter = DateFormatter()
                 // dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
                 // let timestamp = dateFormatter.string(from: Date())
-                // NSLog("\(timestamp) restart BAR, current beat: \(currentBeat)")
-                playOneBar()
+                // NSLog("restart BAR, current beat: \(currentBeat)")
+                playOneBar(firstTime: false)    
             }
         }else{
-            // let dateFormatter = DateFormatter()
-            //     dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-            //     let timestamp = dateFormatter.string(from: Date())
+            let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+                let timestamp = dateFormatter.string(from: Date())
             
-            // NSLog("\(timestamp) start next BEAT , current beat: \(currentBeat)")
+            NSLog("\(timestamp) start next BEAT , current beat: \(currentBeat)")
             self.currentBeat += 1
             if( audioActive){
                 self.audioPlayerNode.scheduleBuffer(self.buffer, at: nil,  completionHandler: self.handleBeatCompletion)  
@@ -138,14 +147,10 @@ class Metronome {
         self.bufferAccented = generateBuffer(bpm: bpm, audioFile: audioFileAccented)
         self.currentBeat = 1
         audioActive = true;
-        // if(beatTimer != nil){
-        //     beatTimer?.startBeatTimer(bpm: audioBpm, runForTicks:timeSignature)
-        // }
-        //NSLog("Before playOneBar")
-        playOneBar()   
+        playOneBar(firstTime: true)    
 
         if !audioPlayerNode.isPlaying {
-            //NSLog("Start: self.audioPlayerNode.play()")
+            NSLog("Start: self.audioPlayerNode.play()")
             self.audioPlayerNode.play()
         }
 
@@ -197,6 +202,7 @@ class Metronome {
         return Int(audioVolume * 100);
     }
     func setVolume(vol: Float) {
+        NSLog("setVolume")
         audioVolume = vol
         mixerNode.outputVolume = vol
     }

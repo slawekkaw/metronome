@@ -95,7 +95,10 @@ public class Metronome {
         new Thread(() -> {
             do {      
                 if(currentBeat==1 ){
-                               
+
+                    if (beatTimer != null) {
+                        beatTimer.startBeatTimer(bpm, timeSignature);// Start first tick
+                    }           
                     synchronized (mLock) {
                         if(!play)
                             return;
@@ -106,9 +109,9 @@ public class Metronome {
                             return;
                         audioGenerator.writeSound(mTookAccentSilenceSoundArray);
                     }
-                    if (beatTimer != null) {
-                        beatTimer.startBeatTimer(bpm, timeSignature);// Start first tick
-                    }     
+                    // if (beatTimer != null) {
+                    //     beatTimer.startBeatTimer(bpm, timeSignature);// Start first tick
+                    // }     
  
                 }else{ 
                     synchronized (mLock) {
