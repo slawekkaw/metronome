@@ -22,48 +22,48 @@ public class BeatTimer {
     @Override
     protected void finalize() throws Throwable {
         try {
-            stopBeatTimer();
+            //stopBeatTimer();
             handler = null;
         } finally {
             super.finalize();
         }
     }
 
-    public void startBeatTimer(int bpm, int runForTicks) {
+    // public void startBeatTimer(int bpm, int runForTicks) {
        
-        long currentTimeMillis = System.currentTimeMillis();
-        System.out.println("Start Beat Timer Event timestamp: " + currentTimeMillis);
+    //     long currentTimeMillis = System.currentTimeMillis();
+    //     System.out.println("Start Beat Timer Event timestamp: " + currentTimeMillis);
         
-        stopBeatTimer();
-        currentTick = 1;
+    //     stopBeatTimer();
+    //     currentTick = 1;
         
-        double timerIntervalInSamples = 60 / (double) bpm * 1000;
-        if (eventTickSink!=null){
+    //     double timerIntervalInSamples = 60 / (double) bpm * 1000;
+    //     if (eventTickSink!=null){
          
-            beatRunnable = new Runnable() {
-                @Override
-                public void run() {        
-                    long currentTimeMillis = System.currentTimeMillis();
-                    System.out.println("eventTick send timestamp: " + currentTimeMillis);
-                    eventTickSink.success(currentTick);      
-                    if( currentTick < runForTicks)
-                    {
-                       currentTick++;
-                       handler.postDelayed(this, (long) (timerIntervalInSamples));
-                    }else{
-                        handler.removeCallbacks(beatRunnable);// stops the timer
-                        beatRunnable = null;
-                    }
-                }
-            };
+    //         beatRunnable = new Runnable() {
+    //             @Override
+    //             public void run() {        
+    //                 long currentTimeMillis = System.currentTimeMillis();
+    //                 System.out.println("eventTick send timestamp: " + currentTimeMillis);
+    //                 eventTickSink.success(currentTick);      
+    //                 if( currentTick < runForTicks)
+    //                 {
+    //                    currentTick++;
+    //                    handler.postDelayed(this, (long) (timerIntervalInSamples));
+    //                 }else{
+    //                     handler.removeCallbacks(beatRunnable);// stops the timer
+    //                     beatRunnable = null;
+    //                 }
+    //             }
+    //         };
 
-            handler.post(beatRunnable);// start immadietely
-        }
-    }
+    //         handler.post(beatRunnable);// start immadietely
+    //     }
+    // }
 
    public void sendEvent(int signatureNumber) {
 
-    new Handler(Looper.getMainLooper()).post(new Runnable() {
+        handler.post(new Runnable() {
         @Override
         public void run() {
             if (eventTickSink != null) {
@@ -74,11 +74,11 @@ public class BeatTimer {
     //System.out.println("eventTick send timestamp: ");
     }
 
-    public void stopBeatTimer() {
-        if (handler != null && beatRunnable != null) {
-            handler.removeCallbacks(beatRunnable);
-            beatRunnable = null;
-        }
-    }
+    // public void stopBeatTimer() {
+    //     if (handler != null && beatRunnable != null) {
+    //         handler.removeCallbacks(beatRunnable);
+    //         beatRunnable = null;
+    //     }
+    // }
 
 }

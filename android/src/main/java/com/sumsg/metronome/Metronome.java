@@ -81,39 +81,9 @@ public class Metronome {
         short[] sampleAccented = (short[]) mAccentedTook.getSample();
         short[] sampleStandard = (short[]) mTook.getSample();
 
-        audioGeneratorAccented.audioTrack.write(sampleAccented, 0, sampleAccented.length );
-        audioGeneratorStandard.audioTrack.write(sampleStandard, 0, sampleStandard.length);
+        audioGeneratorAccented.writeSound(sampleAccented, sampleAccented.length );
+        audioGeneratorStandard.writeSound(sampleStandard, sampleStandard.length);
 
-        // // set notification marker position to the end of the sample
-        // audioGeneratorAccented.audioTrack.setNotificationMarkerPosition(sampleAccented.length);
-        // audioGeneratorAccented.audioTrack.setPlaybackPositionUpdateListener(new AudioTrack.OnPlaybackPositionUpdateListener() {
-        //     @Override
-        //     public void onMarkerReached(AudioTrack track) {
-        //         System.out.println("Marker reached - stopped Std");
-        //         track.stop();
-        //         }
-
-        //     @Override
-        //     public void onPeriodicNotification(AudioTrack track) {
-        //         // Ta metoda zostanie wywołana okresowo podczas odtwarzania
-        //     //System.out.println("Periodic notification");
-        //     }
-        // });
-
-        // audioGeneratorStandard.audioTrack.setNotificationMarkerPosition(sampleStandard.length);
-        // audioGeneratorStandard.audioTrack.setPlaybackPositionUpdateListener(new AudioTrack.OnPlaybackPositionUpdateListener() {
-        //     @Override
-        //     public void onMarkerReached(AudioTrack track) {
-        //         System.out.println("Marker reached - stopped accented");
-        //         track.stop();
-        //         }
-            
-        //     @Override
-        //     public void onPeriodicNotification(AudioTrack track) {
-        //         // Ta metoda zostanie wywołana okresowo podczas odtwarzania
-        //     //System.out.println("Periodic notification");
-        //     }
-        // });
     }
 
     public void play(int bpm, int timeSignature) {
@@ -125,7 +95,7 @@ public class Metronome {
         play = true;
                 
         currentBeat = 1;
-        System.out.println(">>>>>>Metronome Start playing");      
+        //System.out.println(">>>>>>Metronome Start playing");      
 
         preloadSamples();
          ///
@@ -161,7 +131,7 @@ public class Metronome {
                 }
 
                 long endTickTimeNano = System.nanoTime();
-                System.out.println("******** Metronome End Tick time: " + (endTickTimeNano - prevTickTimeNano) / 1_000_000.0 + " ms"); 
+                //System.out.println("******** Metronome End Tick time: " + (endTickTimeNano - prevTickTimeNano) / 1_000_000.0 + " ms"); 
                 prevTickTimeNano = endTickTimeNano;
 
                 synchronized (mLock) {
@@ -185,15 +155,6 @@ public class Metronome {
 
     public void stop() {
         play = false;
-        /*if (audioGenerator.getAudioTrack() != null) {
-            play = false;
-            synchronized (mLock) {   
-              audioGenerator.destroyAudioTrack();
-            }
-        }
-        if (beatTimer != null) {
-            beatTimer.stopBeatTimer();
-        }*/
     }
 
     public int getVolume() {
@@ -202,7 +163,6 @@ public class Metronome {
 
     public void setVolume(float val) {
         mVolume = val;
-        //TODO: set volume for both audio tracks
         if (audioGeneratorAccented.getAudioTrack() != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 try {
@@ -225,12 +185,7 @@ public class Metronome {
 
     public void setBPM(int bpm) {
         mBpm = bpm;
-        //calcSilence();
-        // if (play) {
-        //     if (beatTimer != null) {
-        //         beatTimer.startBeatTimer(bpm,);
-        //     }
-        // }
+       
     }
 
     public double getBPM() {
@@ -242,9 +197,9 @@ public class Metronome {
     }
 
     public void destroy() {
-        if (beatTimer != null) {
-            beatTimer.stopBeatTimer();
-        }
+        // if (beatTimer != null) {
+        //     beatTimer.stopBeatTimer();
+        // }
         if (!play)
             return;
         stop();

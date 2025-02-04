@@ -15,7 +15,7 @@ import java.io.IOException;
 public class AudioGenerator {
 
     private final int sampleRate;
-    public AudioTrack audioTrack;
+    private AudioTrack audioTrack;
 
     // private AudioManager audioManager;
     public AudioGenerator(int sampleRate) {
@@ -54,9 +54,9 @@ public class AudioGenerator {
     }
 
     public void writeSound(short[] sound, final int length) {
-        if (audioTrack.getState() == AudioTrack.STATE_INITIALIZED) {
+        //if (audioTrack.getState() == AudioTrack.STATE_INITIALIZED) {
             audioTrack.write(sound, 0, length);
-        }
+        //}
     }
 
     public void destroyAudioTrack() {
