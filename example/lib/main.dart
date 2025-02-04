@@ -19,7 +19,7 @@ class _MyAppState extends State<MyApp> {
   final iconMetronomeKey = GlobalKey();
   final _metronomePlugin = Metronome();
   bool isplaying = false;
-  int bpm = 120;
+  int bpm = 80;
   int vol = 50;
   ValueNotifier<String> metronomeIcon = ValueNotifier<String>('assets/metronome-left.png');
   String metronomeIconRight = 'assets/metronome-right.png';
@@ -43,7 +43,7 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _metronomePlugin.init(
-      'assets/audio/snare44_wav.wav',
+      'assets/audio/woodblock_high44_wav.wav',
       accentedPath: 'assets/audio/claves44_wav.wav',
       bpm: bpm,
       volume: vol,

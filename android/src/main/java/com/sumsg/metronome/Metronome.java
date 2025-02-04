@@ -6,6 +6,10 @@ import android.util.Log;
 import java.util.Arrays;
 
 import io.flutter.plugin.common.EventChannel;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import android.media.AudioTrack;
 
 
 public class Metronome {
@@ -13,7 +17,8 @@ public class Metronome {
     private int mBpm = 120;
     private static final int SAMPLE_RATE = 44100;
     private boolean play = false;
-    private final AudioGenerator audioGenerator = new AudioGenerator(SAMPLE_RATE);
+    private final AudioGenerator audioGeneratorStandard = new AudioGenerator(SAMPLE_RATE);
+    private final AudioGenerator audioGeneratorAccented = new AudioGenerator(SAMPLE_RATE);
     private short[] mTookSilenceSoundArray;
     private short[] mTookAccentSilenceSoundArray;
     private AudioGenerator.Sample mTook;
@@ -24,6 +29,7 @@ public class Metronome {
     private BeatTimer beatTimer;
     private int timeSignature = 4;
     private int currentBeat=1;
+    long prevTickTimeNano = 0;
 
     public Metronome(Context ctx, String mainFile, String accentedFile) {
         context = ctx;
@@ -62,91 +68,91 @@ public class Metronome {
         beatTimer = new BeatTimer(_eventTickSink);
     }
 
-    public void calcSilence() {
-        // (beats per second * SAMPLE_RATE) - NumberOfSamples
-        mBeatDivisionSampleCount = (int) (((60 / (float) mBpm) * SAMPLE_RATE));
-        int silence = Math.max(mBeatDivisionSampleCount - mTook.getSampleCount(), 0);
-        int silenceAccent = Math.max(mBeatDivisionSampleCount - mAccentedTook.getSampleCount(), 0);
-
-        System.out.println("Metronome calculated mBeatDivisionSampleCount:" + mBeatDivisionSampleCount + " silence: " + silence + " silenceAccent: " + 
-            silenceAccent+" mTook.getSampleCount():"+mTook.getSampleCount()+" mAccentedTook.getSampleCount():"+mAccentedTook.getSampleCount());    
-
-        mTookSilenceSoundArray = new short[silence];
-        mTookAccentSilenceSoundArray = new short[silenceAccent];
-
-        Arrays.fill(mTookSilenceSoundArray, (short) 0);
-        Arrays.fill(mTookAccentSilenceSoundArray, (short) 0);
-    
-    }
-
     private void isInitialized() {
         if (mTook == null) {
             throw new IllegalStateException("Not initialized correctly");
         }
     }
 
+    private void preloadSamples() {
+        audioGeneratorAccented.createPlayerStatic(context, mVolume);
+        audioGeneratorStandard.createPlayerStatic(context, mVolume);
+
+        short[] sampleAccented = (short[]) mAccentedTook.getSample();
+        short[] sampleStandard = (short[]) mTook.getSample();
+
+        audioGeneratorAccented.audioTrack.write(sampleAccented, 0, sampleAccented.length );
+        audioGeneratorStandard.audioTrack.write(sampleStandard, 0, sampleStandard.length);
+
+        // // set notification marker position to the end of the sample
+        // audioGeneratorAccented.audioTrack.setNotificationMarkerPosition(sampleAccented.length);
+        // audioGeneratorAccented.audioTrack.setPlaybackPositionUpdateListener(new AudioTrack.OnPlaybackPositionUpdateListener() {
+        //     @Override
+        //     public void onMarkerReached(AudioTrack track) {
+        //         System.out.println("Marker reached - stopped Std");
+        //         track.stop();
+        //         }
+
+        //     @Override
+        //     public void onPeriodicNotification(AudioTrack track) {
+        //         // Ta metoda zostanie wywołana okresowo podczas odtwarzania
+        //     //System.out.println("Periodic notification");
+        //     }
+        // });
+
+        // audioGeneratorStandard.audioTrack.setNotificationMarkerPosition(sampleStandard.length);
+        // audioGeneratorStandard.audioTrack.setPlaybackPositionUpdateListener(new AudioTrack.OnPlaybackPositionUpdateListener() {
+        //     @Override
+        //     public void onMarkerReached(AudioTrack track) {
+        //         System.out.println("Marker reached - stopped accented");
+        //         track.stop();
+        //         }
+            
+        //     @Override
+        //     public void onPeriodicNotification(AudioTrack track) {
+        //         // Ta metoda zostanie wywołana okresowo podczas odtwarzania
+        //     //System.out.println("Periodic notification");
+        //     }
+        // });
+    }
+
     public void play(int bpm, int timeSignature) {
+        int tickTimeInmilis = (int) (60 / (float) bpm * 1000);
+        mBeatDivisionSampleCount = (int) (((60 / (float) mBpm) * SAMPLE_RATE));
         isInitialized();
         setBPM(bpm);
         setTimeSignature(timeSignature);
         play = true;
-        audioGenerator.createPlayer(context, mVolume);
-        calcSilence();
+                
         currentBeat = 1;
-        short[] sampleAccented = (short[]) mAccentedTook.getSample();
-        short[] sampleStandard = (short[]) mTook.getSample();
+        System.out.println(">>>>>>Metronome Start playing");      
 
+        preloadSamples();
+         ///
+        prevTickTimeNano = System.nanoTime();
         new Thread(() -> {
-            do {
-                long currentTimeMillis = System.currentTimeMillis();
-                System.out.println(">>>>>>Metronome Thread Loop start: send timestamp: " + currentTimeMillis);      
-                if(currentBeat==1 ){
-                    long startTimeTickNano = System.nanoTime();
-                    if (beatTimer != null) {
-                        beatTimer.startBeatTimer(bpm, timeSignature);// Start first tick
-                        System.out.println("Metronome after startbeatTimer: " + System.currentTimeMillis());      
-                    }           
-                    synchronized (mLock) {
-                        if(!play)
-                            return;
-                        
-                        long startTimeNano = System.nanoTime();
-                        audioGenerator.writeSound(sampleAccented, Math.min(sampleAccented.length, mBeatDivisionSampleCount));
-                        long endTimeNano = System.nanoTime();
-                        System.out.println("Metronome writeSound First Tick time: " + (endTimeNano - startTimeNano) / 1_000_000.0 + " ms"); 
-                    }
-                    synchronized (mLock) {
-                        if(!play)
-                            return;
-                        long startTimeNano = System.nanoTime();
-                        audioGenerator.writeSound(mTookAccentSilenceSoundArray);
-                        long endTimeNano = System.nanoTime();
-                        System.out.println("Metronome writeSound First SilentTick time: " + (endTimeNano - startTimeNano) / 1_000_000.0 + " ms"); 
-                    }
-                    long endTimeTickNano = System.nanoTime();
-                    System.out.println("******** Metronome End First Tick time: " + (endTimeTickNano - startTimeTickNano) / 1_000_000.0 + " ms"); 
-                    // if (beatTimer != null) {
-                    //     beatTimer.startBeatTimer(bpm, timeSignature);// Start first tick
-                    // }   
+            ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+            scheduler.scheduleAtFixedRate(() -> {   
 
-                    //System.out.println(">>>>>>>>>Metronome after first Ticker: " + System.currentTimeMillis());        
- 
-                }else{ 
-                    synchronized (mLock) {
-                        if(!play)
-                            return;   
-                        System.out.println("Metronome Before Beat n: " + System.currentTimeMillis());      
-                        audioGenerator.writeSound(sampleStandard, Math.min(sampleStandard.length, mBeatDivisionSampleCount));
-                        System.out.println("Metronome After Beat n: " + System.currentTimeMillis());      
+                synchronized (mLock) {
+                    if (!play){
+                        scheduler.shutdown();
+                        return;
                     }
-                    synchronized (mLock) {
-                        if(!play)
-                            return;
-                        System.out.println("Metronome Before Beat n Silnce: " + System.currentTimeMillis());      
-                        audioGenerator.writeSound(mTookSilenceSoundArray);
-                        System.out.println("Metronome After Beat n: Silence" + System.currentTimeMillis());      
-                    }
-                }
+                }   
+        
+                if (beatTimer != null) {
+                        beatTimer.sendEvent(currentBeat);
+                }       
+
+                 if(currentBeat==1 ){
+                    audioGeneratorAccented.stop();
+                    audioGeneratorAccented.play();
+                 }else{
+                    audioGeneratorStandard.stop();
+                    audioGeneratorStandard.play();
+                 }
+
 
                 if(currentBeat==timeSignature){
                     currentBeat = 1;//Reset current beat
@@ -154,27 +160,32 @@ public class Metronome {
                     currentBeat++;
                 }
 
+                long endTickTimeNano = System.nanoTime();
+                System.out.println("******** Metronome End Tick time: " + (endTickTimeNano - prevTickTimeNano) / 1_000_000.0 + " ms"); 
+                prevTickTimeNano = endTickTimeNano;
+
                 synchronized (mLock) {
                     if (!play)
-                        return;
+                        scheduler.shutdown();
                 }
-            } while (true);
-        }).start();      
+            }, 0, tickTimeInmilis, TimeUnit.MILLISECONDS);
+            synchronized (mLock) {
+                if (!play)
+                    return;
+            }
+         }).start();   
+
+           
 
     }
 
     public void pause() {
-        if (audioGenerator.getAudioTrack() != null) {
-            play = false;
-            audioGenerator.getAudioTrack().pause();
-        }
-        if (beatTimer != null) {
-            beatTimer.stopBeatTimer();
-        }
+       stop();
     }
 
     public void stop() {
-        if (audioGenerator.getAudioTrack() != null) {
+        play = false;
+        /*if (audioGenerator.getAudioTrack() != null) {
             play = false;
             synchronized (mLock) {   
               audioGenerator.destroyAudioTrack();
@@ -182,7 +193,7 @@ public class Metronome {
         }
         if (beatTimer != null) {
             beatTimer.stopBeatTimer();
-        }
+        }*/
     }
 
     public int getVolume() {
@@ -191,10 +202,20 @@ public class Metronome {
 
     public void setVolume(float val) {
         mVolume = val;
-        if (audioGenerator.getAudioTrack() != null) {
+        //TODO: set volume for both audio tracks
+        if (audioGeneratorAccented.getAudioTrack() != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 try {
-                    audioGenerator.getAudioTrack().setVolume(mVolume);
+                    audioGeneratorAccented.getAudioTrack().setVolume(mVolume);
+                } catch (Exception e) {
+                    Log.e("setVolume", String.valueOf(e));
+                }
+            }
+        }
+        if (audioGeneratorStandard.getAudioTrack() != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                try {
+                    audioGeneratorStandard.getAudioTrack().setVolume(mVolume);
                 } catch (Exception e) {
                     Log.e("setVolume", String.valueOf(e));
                 }
@@ -204,7 +225,7 @@ public class Metronome {
 
     public void setBPM(int bpm) {
         mBpm = bpm;
-        calcSilence();
+        //calcSilence();
         // if (play) {
         //     if (beatTimer != null) {
         //         beatTimer.startBeatTimer(bpm,);

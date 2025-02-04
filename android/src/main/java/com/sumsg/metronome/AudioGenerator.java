@@ -15,17 +15,31 @@ import java.io.IOException;
 public class AudioGenerator {
 
     private final int sampleRate;
-    private AudioTrack audioTrack;
+    public AudioTrack audioTrack;
 
     // private AudioManager audioManager;
     public AudioGenerator(int sampleRate) {
         this.sampleRate = sampleRate;
     }
 
-    public void createPlayer(Context context, float volume) {
+     public void createPlayerStatic(Context context, float volume) {
+        int bufferSize = AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
         audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
             sampleRate, AudioFormat.CHANNEL_OUT_MONO,
-            AudioFormat.ENCODING_PCM_16BIT, sampleRate,
+            AudioFormat.ENCODING_PCM_16BIT, bufferSize,
+            AudioTrack.MODE_STATIC);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            audioTrack.setVolume(volume);
+        }
+        //audioTrack.play();
+    }
+
+
+    public void createPlayer(Context context, float volume) {
+        int bufferSize = AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
+        audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
+            sampleRate, AudioFormat.CHANNEL_OUT_MONO,
+            AudioFormat.ENCODING_PCM_16BIT, bufferSize,
             AudioTrack.MODE_STREAM);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             audioTrack.setVolume(volume);
@@ -48,6 +62,14 @@ public class AudioGenerator {
     public void destroyAudioTrack() {
         audioTrack.stop();
         audioTrack.release();
+    }
+
+    public void play() {
+       audioTrack.play();
+    }
+
+    public void stop() {
+       audioTrack.stop();
     }
 
     public AudioTrack getAudioTrack() {

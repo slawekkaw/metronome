@@ -62,9 +62,16 @@ public class BeatTimer {
     }
 
    public void sendEvent(int signatureNumber) {
-        if (eventTickSink != null) {
-            eventTickSink.success(signatureNumber);
+
+    new Handler(Looper.getMainLooper()).post(new Runnable() {
+        @Override
+        public void run() {
+            if (eventTickSink != null) {
+                eventTickSink.success(signatureNumber);
+            }
         }
+        });   
+    //System.out.println("eventTick send timestamp: ");
     }
 
     public void stopBeatTimer() {
