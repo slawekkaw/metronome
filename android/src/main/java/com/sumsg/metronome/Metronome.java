@@ -67,6 +67,10 @@ public class Metronome {
         mBeatDivisionSampleCount = (int) (((60 / (float) mBpm) * SAMPLE_RATE));
         int silence = Math.max(mBeatDivisionSampleCount - mTook.getSampleCount(), 0);
         int silenceAccent = Math.max(mBeatDivisionSampleCount - mAccentedTook.getSampleCount(), 0);
+
+        System.out.println("Metronome calculated mBeatDivisionSampleCount:" + mBeatDivisionSampleCount + " silence: " + silence + " silenceAccent: " + 
+            silenceAccent+" mTook.getSampleCount():"+mTook.getSampleCount()+" mAccentedTook.getSampleCount():"+mAccentedTook.getSampleCount());    
+
         mTookSilenceSoundArray = new short[silence];
         mTookAccentSilenceSoundArray = new short[silenceAccent];
 
@@ -93,36 +97,54 @@ public class Metronome {
         short[] sampleStandard = (short[]) mTook.getSample();
 
         new Thread(() -> {
-            do {      
+            do {
+                long currentTimeMillis = System.currentTimeMillis();
+                System.out.println(">>>>>>Metronome Thread Loop start: send timestamp: " + currentTimeMillis);      
                 if(currentBeat==1 ){
-
+                    long startTimeTickNano = System.nanoTime();
                     if (beatTimer != null) {
                         beatTimer.startBeatTimer(bpm, timeSignature);// Start first tick
+                        System.out.println("Metronome after startbeatTimer: " + System.currentTimeMillis());      
                     }           
                     synchronized (mLock) {
                         if(!play)
                             return;
+                        
+                        long startTimeNano = System.nanoTime();
                         audioGenerator.writeSound(sampleAccented, Math.min(sampleAccented.length, mBeatDivisionSampleCount));
+                        long endTimeNano = System.nanoTime();
+                        System.out.println("Metronome writeSound First Tick time: " + (endTimeNano - startTimeNano) / 1_000_000.0 + " ms"); 
                     }
                     synchronized (mLock) {
                         if(!play)
                             return;
+                        long startTimeNano = System.nanoTime();
                         audioGenerator.writeSound(mTookAccentSilenceSoundArray);
+                        long endTimeNano = System.nanoTime();
+                        System.out.println("Metronome writeSound First SilentTick time: " + (endTimeNano - startTimeNano) / 1_000_000.0 + " ms"); 
                     }
+                    long endTimeTickNano = System.nanoTime();
+                    System.out.println("******** Metronome End First Tick time: " + (endTimeTickNano - startTimeTickNano) / 1_000_000.0 + " ms"); 
                     // if (beatTimer != null) {
                     //     beatTimer.startBeatTimer(bpm, timeSignature);// Start first tick
-                    // }     
+                    // }   
+
+                    //System.out.println(">>>>>>>>>Metronome after first Ticker: " + System.currentTimeMillis());        
  
                 }else{ 
                     synchronized (mLock) {
                         if(!play)
                             return;   
+                        System.out.println("Metronome Before Beat n: " + System.currentTimeMillis());      
                         audioGenerator.writeSound(sampleStandard, Math.min(sampleStandard.length, mBeatDivisionSampleCount));
+                        System.out.println("Metronome After Beat n: " + System.currentTimeMillis());      
                     }
                     synchronized (mLock) {
                         if(!play)
                             return;
+                        System.out.println("Metronome Before Beat n Silnce: " + System.currentTimeMillis());      
                         audioGenerator.writeSound(mTookSilenceSoundArray);
+                        System.out.println("Metronome After Beat n: Silence" + System.currentTimeMillis());      
                     }
                 }
 

@@ -31,19 +31,21 @@ public class BeatTimer {
 
     public void startBeatTimer(int bpm, int runForTicks) {
        
+        long currentTimeMillis = System.currentTimeMillis();
+        System.out.println("Start Beat Timer Event timestamp: " + currentTimeMillis);
+        
         stopBeatTimer();
-        //currentTickAtomic.set(1);
         currentTick = 1;
-        //handler = new Handler(Looper.getMainLooper());
+        
         double timerIntervalInSamples = 60 / (double) bpm * 1000;
         if (eventTickSink!=null){
          
             beatRunnable = new Runnable() {
                 @Override
                 public void run() {        
-          
-                    eventTickSink.success(currentTick);
-                
+                    long currentTimeMillis = System.currentTimeMillis();
+                    System.out.println("eventTick send timestamp: " + currentTimeMillis);
+                    eventTickSink.success(currentTick);      
                     if( currentTick < runForTicks)
                     {
                        currentTick++;
