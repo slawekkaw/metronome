@@ -138,6 +138,7 @@ class _MyAppState extends State<MyApp> {
                 max: 100,
                 divisions: 100,
                 onChangeEnd: (val) {
+                  log('Volume: $vol');
                   _metronomePlugin.setVolume(vol);
                 },
                 onChanged: (val) {

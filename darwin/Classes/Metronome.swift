@@ -3,197 +3,111 @@ import AVFoundation
 
 class Metronome {
     private var beatTimer:BeatTimer?
-    //
-    private var audioPlayerNode: AVAudioPlayerNode
-    private var audioFileMain: AVAudioFile
-    private var audioFileAccented: AVAudioFile
-    private var audioEngine: AVAudioEngine
-
-    private var mixerNode: AVAudioMixerNode
-
-    private var bufferAccented: AVAudioPCMBuffer
-    private var buffer: AVAudioPCMBuffer
-
-
+    private var mixerNodeMain: AVAudioMixerNode?
+    private var mixerNodeAccented: AVAudioMixerNode?
     //var
     public var audioBpm: Int = 120
-    public var audioVolume: Float = 0
+    public var audioVolume: Float = 50
     public var timeSignature: Int = 4
     private var currentBeat: Int = 1
     private var audioActive: Bool = false;
     //
+    private var timer: DispatchSourceTimer?
+
+    private var playerMain:  AudioPlayer?
+    private var playerAccented:  AudioPlayer?
+
+    var lastTickTime: TimeInterval?
     
     init(mainFile: URL,accentedFile: URL,enableSession: Bool) {
-        audioFileMain = try! AVAudioFile(forReading: mainFile)
-        audioFileAccented = try! AVAudioFile(forReading: accentedFile)
 
-        audioPlayerNode = AVAudioPlayerNode()      
-        audioEngine = AVAudioEngine()
-        audioEngine.attach(self.audioPlayerNode)
-        mixerNode = audioEngine.mainMixerNode
-        mixerNode.outputVolume = audioVolume             
-        audioEngine.connect(audioPlayerNode, to: mixerNode, format: audioFileMain.processingFormat)
-        audioEngine.prepare()
-      
-        if !self.audioEngine.isRunning {
-            do {
-                try self.audioEngine.start()
-            } catch {
-                print(error)
-            }
-        }
-#if os(iOS)
-        if enableSession {
-            let session = AVAudioSession.sharedInstance()
-            do {
-                try session.setActive(true)
-                //try session.overrideOutputAudioPort(AVAudioSession.PortOverride.none)
-                try session.setCategory(AVAudioSession.Category.playback, options: [.defaultToSpeaker, .allowAirPlay, .allowBluetoothA2DP])
-            } catch {
-                print(error)
-            }
-        }
-        UIApplication.shared.beginReceivingRemoteControlEvents()
-#endif    
-    
-        buffer = AVAudioPCMBuffer()
-        bufferAccented = AVAudioPCMBuffer()
+        playerMain = AudioPlayer(fileUrl: mainFile) 
+        playerAccented = AudioPlayer(fileUrl: accentedFile)  
+
+        mixerNodeMain = playerMain?.audioEngine.mainMixerNode
+        mixerNodeMain?.outputVolume = audioVolume    
+
+        mixerNodeAccented = playerAccented?.audioEngine.mainMixerNode
+        mixerNodeAccented?.outputVolume = audioVolume
+
     }
 
     public func enableTickCallback(_eventTickSink: EventTickHandler) {
        beatTimer = BeatTimer(eventTick: _eventTickSink)
     }
-    private func generateBuffer(bpm: Int, audioFile: AVAudioFile ) -> AVAudioPCMBuffer {
-
-        audioFile.framePosition = 0
-        let beatLength = AVAudioFrameCount(audioFile.processingFormat.sampleRate * 60 / Double(bpm) )
-        audioFile.framePosition = 0
-        let bufferMainClick = AVAudioPCMBuffer(pcmFormat: audioFile.processingFormat,
-                                               frameCapacity: beatLength)!
-        try! audioFile.read(into: bufferMainClick)
-        bufferMainClick.frameLength = beatLength
-        let bufferBar = AVAudioPCMBuffer(pcmFormat: audioFile.processingFormat,
-                                         frameCapacity:  beatLength)!
-//        bufferBar.frameLength = 4 * beatLength
-        bufferBar.frameLength = beatLength
-
-        // don't forget if we have two or more channels then we have to multiply memory pointee at channels count
-        let channelCount = Int(audioFile.processingFormat.channelCount)
-        let mainClickArray = Array(
-            UnsafeBufferPointer(start: bufferMainClick.floatChannelData![0],
-                                count: channelCount * Int(beatLength))
-        )
-
-        var barArray = [Float]()
-            barArray.append(contentsOf: mainClickArray)
-        bufferBar.floatChannelData!.pointee.update(from: barArray,
-                                                   count: channelCount * Int(bufferBar.frameLength))
-        return bufferBar
-    }
-
-    private func playOneBar(firstTime: Bool = false) {
-
-        let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-                let timestamp = dateFormatter.string(from: Date())
-
-        NSLog("\(timestamp) Start playOneBar, current beat: \(currentBeat)")
-        var optionsVal: AVAudioPlayerNodeBufferOptions = firstTime ? .interrupts : []
-        if firstTime {
-            optionsVal = .interrupts
-        }
-
-        if(beatTimer != nil){
-           beatTimer?.startBeatTimer(bpm: audioBpm, runForTicks:timeSignature)
-           
-        }
-        self.audioPlayerNode.scheduleBuffer(self.bufferAccented, at: nil, options: optionsVal, completionHandler: self.handleBeatCompletion)
-    }
-
-
-    private func handleBeatCompletion() {
-        let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-                let timestamp = dateFormatter.string(from: Date())
-        NSLog("\(timestamp) Start handleBeatCompletion, , current beat: \(currentBeat)")
-        if self.currentBeat >= self.timeSignature {
-            self.currentBeat = 1
-            if( audioActive){
-                // let dateFormatter = DateFormatter()
-                // dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-                // let timestamp = dateFormatter.string(from: Date())
-                // NSLog("restart BAR, current beat: \(currentBeat)")
-                playOneBar(firstTime: false)    
-            }
-        }else{
-            let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-                let timestamp = dateFormatter.string(from: Date())
-            
-            NSLog("\(timestamp) start next BEAT , current beat: \(currentBeat)")
-            self.currentBeat += 1
-            if( audioActive){
-                self.audioPlayerNode.scheduleBuffer(self.buffer, at: nil,  completionHandler: self.handleBeatCompletion)  
-            }
-        }
-    }
-
 
     func play(bpm: Int, timeSignature: Int) {
-        NSLog("Starting beat timer with bpm: \(bpm) and timeSignature: \(timeSignature)")
+        //NSLog("Starting beat timer with bpm: \(bpm) and timeSignature: \(timeSignature)")
         self.audioBpm = bpm
         self.timeSignature = timeSignature
-        self.buffer = generateBuffer(bpm: bpm, audioFile: audioFileMain)
-        self.bufferAccented = generateBuffer(bpm: bpm, audioFile: audioFileAccented)
         self.currentBeat = 1
         audioActive = true;
-        playOneBar(firstTime: true)    
+        
+        let interval = 60.0 / Double(bpm)
+        let queue = DispatchQueue(label: "gignotesmetronome.queue", qos: .userInteractive)
 
-        if !audioPlayerNode.isPlaying {
-            NSLog("Start: self.audioPlayerNode.play()")
-            self.audioPlayerNode.play()
+        timer = DispatchSource.makeTimerSource(queue: queue)
+        timer?.schedule(deadline: .now(), repeating: interval)
+        timer?.setEventHandler { [weak self] in
+            guard let strongSelf = self else { return }  // Unwrapping self safely
+            DispatchQueue.main.async {
+                strongSelf.tick()
+                strongSelf.currentBeat += 1
+                if( strongSelf.currentBeat > timeSignature){
+                    strongSelf.currentBeat = 1
+                }
+                
+            }
         }
-
-       
+        timer?.resume()
+      
     }
+
+    private func tick() {
+        let currentTime = Date().timeIntervalSince1970*1000
+        if let lastTime = self.lastTickTime {
+            let delta = currentTime - lastTime
+                print("🔍 TickTime: \(delta) mili sekundy")
+            }
+
+        self.lastTickTime = currentTime
+
+        if( currentBeat==1){
+            playerAccented?.play()
+        }else{
+            playerMain?.play()
+        }
+        if(beatTimer != nil){
+           beatTimer?.sendEvent(currentTickToSend: currentBeat)
+           
+        }
+    }
+
     func pause() {
         self.stop()
-        // audioPlayerNode.pause()
-        // self.currentBeat = 1
-        // if(beatTimer != nil){
-        //     beatTimer?.stopBeatTimer()
-        // }
     }
     func stop() {
         NSLog("Stop")
         audioActive = false;
-        if audioPlayerNode.isPlaying {
-            self.audioPlayerNode.stop()
-        }
+        timer?.cancel()
+        timer = nil
+        
         self.currentBeat = 1
-        if(beatTimer != nil){
-            beatTimer?.stopBeatTimer()
-        }
+        
     }
     func setBPM(bpm: Int) {
         NSLog("Set BPM")
         audioBpm = bpm
-        if audioPlayerNode.isPlaying {
-            play(bpm: self.audioBpm, timeSignature: self.timeSignature)
-            if(beatTimer != nil){
-                beatTimer?.startBeatTimer(bpm: bpm, runForTicks:timeSignature)
-            }
-        }
+        // if audioPlayerNode.isPlaying {
+        //     play(bpm: self.audioBpm, timeSignature: self.timeSignature)
+        //     if(beatTimer != nil){
+        //         beatTimer?.startBeatTimer(bpm: bpm, runForTicks:timeSignature)
+        //     }
+        // }
     }
     func setTimeSignature(timeSignature: Int) {
-        NSLog("setTimeSignature")
         self.timeSignature = timeSignature
-        if audioPlayerNode.isPlaying {
-            play(bpm: self.audioBpm, timeSignature: self.timeSignature)
-            if(beatTimer != nil){
-                beatTimer?.startBeatTimer(bpm: audioBpm, runForTicks:timeSignature)
-            }
-        }
+
     }
     var getBPM: Int {
         return audioBpm;
@@ -202,29 +116,55 @@ class Metronome {
         return Int(audioVolume * 100);
     }
     func setVolume(vol: Float) {
-        NSLog("setVolume")
+        //NSLog("setVolume"+String(vol))
         audioVolume = vol
-        mixerNode.outputVolume = vol
+        mixerNodeMain?.outputVolume = vol
+        mixerNodeAccented?.outputVolume = vol
     }
     var isPlaying: Bool {
-        return audioPlayerNode.isPlaying
+        //return audioPlayerNode.isPlaying
+        return false;
     }
     func destroy() {
-        audioPlayerNode.reset()
-        audioPlayerNode.stop()
-        audioEngine.reset()
-        audioEngine.stop()
-        audioEngine.detach(audioPlayerNode)
-        if(beatTimer != nil){
-            beatTimer?.stopBeatTimer()
-        }
+
+        timer?.cancel()
+        timer = nil
     }
     func setAudioFile(mainFile: URL) {
         NSLog("setAudioFile")
-        audioFileMain = try! AVAudioFile(forReading: mainFile)
-        if isPlaying {
-            stop()
-            play(bpm: audioBpm, timeSignature: timeSignature)
+        // audioFileMain = try! AVAudioFile(forReading: mainFile)
+        // if isPlaying {
+        //     stop()
+        //     play(bpm: audioBpm, timeSignature: timeSignature)
+        // }
+    }
+}
+
+
+
+class AudioPlayer {
+    var audioEngine = AVAudioEngine()
+    var audioPlayerNode = AVAudioPlayerNode()
+    var audioFile: AVAudioFile?
+
+    init(fileUrl: URL) {
+        do {
+      
+            audioFile = try AVAudioFile(forReading: fileUrl)   
+            audioEngine.attach(audioPlayerNode)
+            audioEngine.connect(audioPlayerNode, to: audioEngine.mainMixerNode, format: audioFile?.processingFormat)
+            try audioEngine.start()
+
+        } catch {
+            print("❌ Błąd inicjalizacji: \(error.localizedDescription)")
         }
+    }
+
+    func play() {
+        guard let audioFile = audioFile else { return }
+
+        audioPlayerNode.stop()  // Zatrzymaj poprzednie odtwarzanie
+        audioPlayerNode.scheduleFile(audioFile, at: nil, completionHandler: nil)
+        audioPlayerNode.play()  // Odtwarzaj dźwięk
     }
 }
