@@ -7,7 +7,7 @@ class Metronome {
     private var mixerNodeAccented: AVAudioMixerNode?
     //var
     public var audioBpm: Int = 120
-    public var audioVolume: Float = 50
+    public var audioVolume: Float = 0
     public var timeSignature: Int = 4
     private var currentBeat: Int = 1
     private var audioActive: Bool = false;
@@ -24,11 +24,11 @@ class Metronome {
         playerMain = AudioPlayer(fileUrl: mainFile) 
         playerAccented = AudioPlayer(fileUrl: accentedFile)  
 
-        mixerNodeMain = playerMain?.audioEngine.mainMixerNode
-        mixerNodeMain?.outputVolume = audioVolume    
+        // mixerNodeMain = playerMain?.audioEngine.mainMixerNode
+        // mixerNodeMain?.outputVolume = audioVolume    
 
-        mixerNodeAccented = playerAccented?.audioEngine.mainMixerNode
-        mixerNodeAccented?.outputVolume = audioVolume
+        // mixerNodeAccented = playerAccented?.audioEngine.mainMixerNode
+        // mixerNodeAccented?.outputVolume = audioVolume
 
     }
 
@@ -42,7 +42,8 @@ class Metronome {
         self.timeSignature = timeSignature
         self.currentBeat = 1
         audioActive = true;
-        
+
+       
         let interval = 60.0 / Double(bpm)
         let queue = DispatchQueue(label: "gignotesmetronome.queue", qos: .userInteractive)
 
@@ -51,6 +52,7 @@ class Metronome {
         timer?.setEventHandler { [weak self] in
             guard let strongSelf = self else { return }  // Unwrapping self safely
             DispatchQueue.main.async {
+                //strongSelf.setVolume(vol: strongSelf.audioVolume)
                 strongSelf.tick()
                 strongSelf.currentBeat += 1
                 if( strongSelf.currentBeat > timeSignature){
@@ -73,9 +75,9 @@ class Metronome {
         self.lastTickTime = currentTime
 
         if( currentBeat==1){
-            playerAccented?.play()
+            playerAccented?.play(volume: audioVolume)
         }else{
-            playerMain?.play()
+            playerMain?.play(volume: audioVolume)
         }
         if(beatTimer != nil){
            beatTimer?.sendEvent(currentTickToSend: currentBeat)
@@ -118,8 +120,10 @@ class Metronome {
     func setVolume(vol: Float) {
         //NSLog("setVolume"+String(vol))
         audioVolume = vol
-        mixerNodeMain?.outputVolume = vol
-        mixerNodeAccented?.outputVolume = vol
+        playerMain?.setVolume(vol)
+        playerAccented?.setVolume(vol)
+        //mixerNodeMain?.outputVolume = vol
+        //mixerNodeAccented?.outputVolume = vol
     }
     var isPlaying: Bool {
         //return audioPlayerNode.isPlaying
@@ -142,29 +146,72 @@ class Metronome {
 
 
 
-class AudioPlayer {
-    var audioEngine = AVAudioEngine()
-    var audioPlayerNode = AVAudioPlayerNode()
-    var audioFile: AVAudioFile?
+// class AudioPlayer {
+//     var audioEngine = AVAudioEngine()
+//     var audioPlayerNode = AVAudioPlayerNode()
+//     var audioFile: AVAudioFile?
 
-    init(fileUrl: URL) {
-        do {
+//     init(fileUrl: URL) {
+//         do {
       
-            audioFile = try AVAudioFile(forReading: fileUrl)   
-            audioEngine.attach(audioPlayerNode)
-            audioEngine.connect(audioPlayerNode, to: audioEngine.mainMixerNode, format: audioFile?.processingFormat)
-            try audioEngine.start()
+//             audioFile = try AVAudioFile(forReading: fileUrl)   
+//             audioEngine.attach(audioPlayerNode)
+//             audioEngine.connect(audioPlayerNode, to: audioEngine.mainMixerNode, format: audioFile?.processingFormat)
+//             try audioEngine.start()
 
+//         } catch {
+//             print("❌ Błąd inicjalizacji: \(error.localizedDescription)")
+//         }
+//     }
+
+//     func play() {
+//         guard let audioFile = audioFile else { return }
+
+//         audioPlayerNode.stop()  // Zatrzymaj poprzednie odtwarzanie
+//         audioEngine.mainMixerNode.outputVolume = 0
+//         audioPlayerNode.scheduleFile(audioFile, at: nil, completionHandler: nil)    
+        
+//         audioPlayerNode.play()  // Odtwarzaj dźwięk
+//     }
+// }
+
+
+class AudioPlayer {
+    private var player: AVAudioPlayer?
+    private var audioFileURL: URL?
+    
+    init(fileUrl: URL) {
+        self.audioFileURL = fileUrl
+        prepareAudio()
+    }
+    
+    /// Przygotowanie audio (ładowanie pliku)
+    private func prepareAudio() {
+        guard let url = audioFileURL else { return }
+        do {
+            player = try AVAudioPlayer(contentsOf: url)
+            player?.prepareToPlay()  // Buforowanie dźwięku, aby uniknąć opóźnień
         } catch {
-            print("❌ Błąd inicjalizacji: \(error.localizedDescription)")
+            print("Błąd podczas ładowania pliku audio: \(error.localizedDescription)")
         }
     }
 
-    func play() {
-        guard let audioFile = audioFile else { return }
-
-        audioPlayerNode.stop()  // Zatrzymaj poprzednie odtwarzanie
-        audioPlayerNode.scheduleFile(audioFile, at: nil, completionHandler: nil)
-        audioPlayerNode.play()  // Odtwarzaj dźwięk
+    /// Odtwarzanie dźwięku z określoną głośnością
+    func play(volume: Float) {
+        guard let player = player else { return }
+        
+        player.volume = volume  // Ustawienie głośności przed odtwarzaniem
+        player.play()
+    }
+    
+    /// Zatrzymanie odtwarzania
+    func stop() {
+        player?.stop()
+        player?.currentTime = 0  // Reset czasu odtwarzania
+    }
+    
+    /// Zmiana głośności w trakcie odtwarzania
+    func setVolume(_ volume: Float) {
+        player?.volume = volume
     }
 }

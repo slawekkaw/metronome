@@ -20,7 +20,7 @@ class _MyAppState extends State<MyApp> {
   final _metronomePlugin = Metronome();
   bool isplaying = false;
   int bpm = 80;
-  int vol = 50;
+  int vol = 0;
   ValueNotifier<String> metronomeIcon = ValueNotifier<String>('assets/metronome-left.png');
   String metronomeIconRight = 'assets/metronome-right.png';
   String metronomeIconLeft = 'assets/metronome-left.png';
