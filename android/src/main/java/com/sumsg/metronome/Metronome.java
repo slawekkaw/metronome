@@ -16,7 +16,7 @@ public class Metronome {
     private final Object mLock = new Object();
     private int mBpm = 120;
     private static final int SAMPLE_RATE = 44100;
-    private boolean play = false;
+    private volatile boolean play = false;
     private final AudioGenerator audioGeneratorStandard = new AudioGenerator(SAMPLE_RATE);
     private final AudioGenerator audioGeneratorAccented = new AudioGenerator(SAMPLE_RATE);
     private short[] mTookSilenceSoundArray;
@@ -29,7 +29,8 @@ public class Metronome {
     private BeatTimer beatTimer;
     private int timeSignature = 4;
     private int currentBeat=1;
-    long prevTickTimeNano = 0;
+    private long prevTickTimeNano = 0;
+    private Thread metronomeThread = null;
 
     public Metronome(Context ctx, String mainFile, String accentedFile) {
         context = ctx;
@@ -153,8 +154,26 @@ public class Metronome {
        stop();
     }
 
+    //  private void waitUntilThreadIsStopped() {
+    //     if (metronomeThread != null) {
+    //         try {
+    //             if (metronomeThread.isAlive()) { // Sprawdzamy, czy wątek jeszcze działa
+    //                 metronomeThread.join(); // Czekamy na jego zakończenie
+    //             }else{
+    //                 metronomeThread = null; // Resetujemy referencję do wątku
+    //             }
+    //         } catch (InterruptedException e) {
+    //             Thread.currentThread().interrupt(); // Przywracamy flagę przerwania
+    //             Log.e("Metronome", "Thread was interrupted", e);
+    //         } finally {
+    //             metronomeThread = null; // Resetujemy referencję do wątku
+    //         }
+    //     }
+    // }
+
     public void stop() {
         play = false;
+        //wait
     }
 
     public int getVolume() {
