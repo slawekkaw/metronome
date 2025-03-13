@@ -76,7 +76,10 @@ class Metronome {
   }
 
   ///set the audio file of the metronome
-  Future<void> setAccentedAudioFile(String path) async {
+  Future<void> setAccentedAudioAssets(String path) async {
+    if (!PlatformUtils.isWeb) {
+      path = await saveAudioAssetsToLocal(path);
+    }
     return MetronomePlatform.instance.setAccentedAudioFile(path);
   }
 

@@ -156,7 +156,7 @@ class _MyAppState extends State<MyApp> {
                         (wav) => ElevatedButton(
                           child: Text(wav),
                           onPressed: () {
-                            _metronomePlugin.setAudioAssets(
+                            _metronomePlugin.setAccentedAudioAssets(
                                 'assets/audio/${wav}44_wav.wav');
                           },
                         ),
