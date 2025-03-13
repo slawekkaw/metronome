@@ -88,6 +88,9 @@ public class MetronomePlugin implements FlutterPlugin, MethodCallHandler {
       case "setAudioFile":
         setAudioFile(call);
         break;
+      case "setAccentedAudioFile":
+        setAccentedAudioFile(call);
+        break;
       case "destroy":
         metronome.destroy();
         break;
@@ -141,6 +144,12 @@ public class MetronomePlugin implements FlutterPlugin, MethodCallHandler {
   private void setAudioFile(@NonNull MethodCall call) {
     if (metronome != null) {
       metronome.setAudioFile(call.argument("path"));
+    }
+  }
+
+   private void setAccentedAudioFile(@NonNull MethodCall call) {
+    if (metronome != null) {
+      metronome.setAccentedAudioFile(call.argument("accentedPath"));
     }
   }
 

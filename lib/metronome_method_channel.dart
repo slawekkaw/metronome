@@ -173,6 +173,22 @@ class MethodChannelMetronome extends MetronomePlatform {
   }
 
   @override
+  Future<void> setAccentedAudioFile(String accentedPath) async {
+    if (accentedPath == '') {
+      throw Exception('Accented path cannot be empty');
+    }
+    try {
+      await methodChannel.invokeMethod<void>('setAccentedAudioFile', {
+        'accentedPath': accentedPath,
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+    }
+  }
+
+  @override
   Future<void> setAudioAssets(String mainPath) async {
     if (mainPath == '') {
       throw Exception('Main path cannot be empty');

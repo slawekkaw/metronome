@@ -63,6 +63,10 @@ abstract class MetronomePlatform extends PlatformInterface {
     throw UnimplementedError('setAudioFile() has not been implemented.');
   }
 
+  Future<void> setAccentedAudioFile(String accentedPath) {
+    throw UnimplementedError('setAccentedAudioFile() has not been implemented.');
+  }
+
   Future<void> setAudioAssets(String mainPath) {
     throw UnimplementedError('setAudioAssets() has not been implemented.');
   }
