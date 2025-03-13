@@ -62,6 +62,8 @@ public class MetronomePlugin: NSObject, FlutterPlugin {
                 break;
               case "setAudioFile":
                   setAudioFile(attributes: attributes)
+              case "setAccentedAudioFile":
+                  setAccentedAudioFile(attributes: attributes)
                 break;
               case "destroy":
                   metronome?.destroy()
@@ -109,6 +111,17 @@ public class MetronomePlugin: NSObject, FlutterPlugin {
             }
         }
     }
+
+     private func setAccentedAudioFile( attributes:NSDictionary?) {
+        if metronome != nil {
+            let accentedFilePath: String = (attributes?["accentedPath"] as? String) ?? ""
+            let accentedFileUrl = URL(fileURLWithPath: accentedFilePath);
+            if accentedFilePath != "" {
+                metronome?.setAccentedAudioFile( accentedFile: accentedFileUrl)
+            }
+        }
+    }
+
     private func setVolume( attributes:NSDictionary?) {
         if metronome != nil {
             let volume: Double = (attributes?["volume"] as? Double) ?? 0.5

@@ -124,7 +124,17 @@ class Metronome {
         timer = nil
     }
     func setAudioFile(mainFile: URL) {
+        playerMain = AudioPlayer(fileUrl: mainFile) 
         NSLog("setAudioFile")
+        // audioFileMain = try! AVAudioFile(forReading: mainFile)
+        // if isPlaying {
+        //     stop()
+        //     play(bpm: audioBpm, timeSignature: timeSignature)
+        // }
+    }
+    func setAccentedAudioFile(accentedFile: URL) {
+        NSLog("setAudioFile")
+        playerAccented = AudioPlayer(fileUrl: accentedFile)
         // audioFileMain = try! AVAudioFile(forReading: mainFile)
         // if isPlaying {
         //     stop()
