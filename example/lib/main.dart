@@ -21,6 +21,7 @@ class _MyAppState extends State<MyApp> {
   bool isplaying = false;
   int bpm = 80;
   int vol = 0;
+  int timeSignature = 4;
   ValueNotifier<String> metronomeIcon = ValueNotifier<String>('assets/metronome-left.png');
   String metronomeIconRight = 'assets/metronome-right.png';
   String metronomeIconLeft = 'assets/metronome-left.png';
@@ -49,7 +50,7 @@ class _MyAppState extends State<MyApp> {
       volume: vol,
       enableSession: true,
       enableTickCallback: true,
-      timeSignature: 4,
+      timeSignature: timeSignature, // no time signature
 
     );
     _metronomePlugin.onListenTick((currentTickIntern) {
@@ -197,7 +198,7 @@ class _MyAppState extends State<MyApp> {
               isplaying = false;
             } else {
               _metronomePlugin.setVolume(vol);
-              _metronomePlugin.play(bpm, 4);
+              _metronomePlugin.play(bpm, timeSignature);
               isplaying = true;
             }
             // int? bpm2 = await _metronomePlugin.getBPM();

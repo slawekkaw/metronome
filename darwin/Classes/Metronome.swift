@@ -31,7 +31,7 @@ class Metronome {
     }
 
     func play(bpm: Int, timeSignature: Int) {
-        //NSLog("Starting beat timer with bpm: \(bpm) and timeSignature: \(timeSignature)")
+        NSLog("Starting beat timer with bpm: \(bpm) and timeSignature: \(timeSignature)")
         self.audioBpm = bpm
         self.timeSignature = timeSignature
         self.currentBeat = 1
@@ -67,10 +67,11 @@ class Metronome {
 
         // self.lastTickTime = currentTime
 
-        if( currentBeat==1){
-            playerAccented?.play(volume: audioVolume)
-        }else{
+        if( currentBeat>1 || self.timeSignature == 0){
             playerMain?.play(volume: audioVolume)
+        }else{
+            playerAccented?.play(volume: audioVolume)
+            
         }
         if(beatTimer != nil){
            beatTimer?.sendEvent(currentTickToSend: currentBeat)

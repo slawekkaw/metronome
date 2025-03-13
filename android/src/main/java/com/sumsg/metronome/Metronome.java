@@ -116,16 +116,16 @@ public class Metronome {
                         beatTimer.sendEvent(currentBeat);
                 }       
 
-                 if(currentBeat==1 ){
-                    audioGeneratorAccented.stop();
-                    audioGeneratorAccented.play();
-                 }else{
+                 if((currentBeat>1)||(timeSignature==0) ){
                     audioGeneratorStandard.stop();
                     audioGeneratorStandard.play();
+                 }else{
+                    audioGeneratorAccented.stop();
+                    audioGeneratorAccented.play();
                  }
 
 
-                if(currentBeat==timeSignature){
+                if(currentBeat>=timeSignature){
                     currentBeat = 1;//Reset current beat
                 }else{
                     currentBeat++;
@@ -153,23 +153,6 @@ public class Metronome {
     public void pause() {
        stop();
     }
-
-    //  private void waitUntilThreadIsStopped() {
-    //     if (metronomeThread != null) {
-    //         try {
-    //             if (metronomeThread.isAlive()) { // Sprawdzamy, czy wątek jeszcze działa
-    //                 metronomeThread.join(); // Czekamy na jego zakończenie
-    //             }else{
-    //                 metronomeThread = null; // Resetujemy referencję do wątku
-    //             }
-    //         } catch (InterruptedException e) {
-    //             Thread.currentThread().interrupt(); // Przywracamy flagę przerwania
-    //             Log.e("Metronome", "Thread was interrupted", e);
-    //         } finally {
-    //             metronomeThread = null; // Resetujemy referencję do wątku
-    //         }
-    //     }
-    // }
 
     public void stop() {
         play = false;

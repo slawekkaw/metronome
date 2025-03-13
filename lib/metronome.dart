@@ -12,6 +12,7 @@ class Metronome {
   /// @param bpm: the beats per minute, default `120`
   /// @param volume: the volume of the metronome, default `50`%
   /// @param enableSession: default `true`, When set to true, the music of other apps will stop when the metronome is played. only works on IOS
+  /// @param timeSignature: default `4`, When set to 0 - means no time signature, 4 means 4/4 time signature etc.
   /// ```
   Future<void> init(
     String mainPath, {
@@ -20,7 +21,7 @@ class Metronome {
     int volume = 50,
     bool enableSession = true,
     bool enableTickCallback = false,
-    int timeSignature = 4,
+    int timeSignature = 4,// 0 - means no time signature
   }) async {
     if (!PlatformUtils.isWeb) {
       mainPath = await saveAudioAssetsToLocal(mainPath);
