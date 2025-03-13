@@ -147,6 +147,9 @@ class _MyAppState extends State<MyApp> {
                   setState(() {});
                 },
               ),
+              TextButton(onPressed: (){
+                    _metronomePlugin.stop();
+              }, child: Text('Stop')),
               SizedBox(
                 width: 200,
                 height: 350,
@@ -165,6 +168,7 @@ class _MyAppState extends State<MyApp> {
                       .toList(),
                 ),
               ),
+              
             ],
           ),
         ),

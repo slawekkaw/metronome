@@ -31,6 +31,7 @@ public class Metronome {
     private int currentBeat=1;
     private long prevTickTimeNano = 0;
     private Thread metronomeThread = null;
+    private ScheduledExecutorService scheduler;
 
     public Metronome(Context ctx, String mainFile, String accentedFile) {
         context = ctx;
@@ -96,13 +97,13 @@ public class Metronome {
         play = true;
                 
         currentBeat = 1;
-        //System.out.println(">>>>>>Metronome Start playing");      
+        System.out.println(">>>>>>Metronome Start playing");      
 
         preloadSamples();
          ///
         prevTickTimeNano = System.nanoTime();
         new Thread(() -> {
-            ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+            scheduler = Executors.newScheduledThreadPool(1);
             scheduler.scheduleAtFixedRate(() -> {   
 
                 synchronized (mLock) {
@@ -113,7 +114,7 @@ public class Metronome {
                 }   
         
                 if (beatTimer != null) {
-                        beatTimer.sendEvent(currentBeat);
+                    beatTimer.sendEvent(currentBeat);
                 }       
 
                  if((currentBeat>1)||(timeSignature==0) ){
@@ -136,17 +137,19 @@ public class Metronome {
                 prevTickTimeNano = endTickTimeNano;
 
                 synchronized (mLock) {
-                    if (!play)
+                    if (!play){
                         scheduler.shutdown();
+                        return;
+                    }
+
                 }
             }, 0, tickTimeInmilis, TimeUnit.MILLISECONDS);
             synchronized (mLock) {
-                if (!play)
+                if (!play){
                     return;
+                }
             }
          }).start();   
-
-           
 
     }
 
@@ -155,9 +158,13 @@ public class Metronome {
     }
 
     public void stop() {
-        play = false;
-        //wait
-    }
+        synchronized (mLock) {
+            play = false;
+            if (scheduler != null && !scheduler.isShutdown()) {
+               scheduler.shutdownNow(); 
+            }
+        }
+   }
 
     public int getVolume() {
         return (int) (mVolume * 100);
